@@ -1,7 +1,5 @@
-import donnees
 import bras_robot
 import affichage
-
 import serial
 import time
  
@@ -25,12 +23,14 @@ def envoyer_angles(a1, a2, a3):
         reponse = ser.readline().decode('utf-8').strip()
         print(f"OpenRB dit : {reponse}")
  
-# --- TEST ---
-try:
-    while True:
-        # Exemple : envoyer des positions
-        envoyer_angles(180, 90, 45) #Changer en rad
-        time.sleep(0.1) # On envoie une mise à jour toutes les 100ms
-except KeyboardInterrupt:
-    ser.close()
-    print("Connexion fermée.")
+# --- Main ---
+while True:
+    bras_robot.Calculate()
+    affichage.Draw()
+    # Exemple : envoyer des positions
+    envoyer_angles(180, 90, 45) #Changer en rad
+    time.sleep(2) # On envoie une mise à jour toutes les 100ms
+    if ():
+        ser.close()
+        print("Connexion fermée.")
+        break
