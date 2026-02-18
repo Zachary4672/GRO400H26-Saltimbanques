@@ -7,6 +7,9 @@
 // N'oubliez-pas de configurer votre port série pour cette console à 115200 bauds.
 
 #include <Dynamixel2Arduino.h>
+#include <Servo.h>
+#define ouvert 50
+#define fermer 0
 
 // Please modify it to suit your hardware.
 #if defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_MEGA2560) // When using DynamixelShield
@@ -43,11 +46,18 @@
   #define DEBUG_SERIAL Serial
   const int DXL_DIR_PIN = 2; // DYNAMIXEL Shield DIR PIN
 #endif
+
+Servo myServo;
+const int servoPin = 5;
  
 // TODO: À changer selon l'ID de votre moteur :
 const uint8_t DXL_ID_DH1007 = 1; 
 const uint8_t DXL_ID_DH2028 = 2; 
 const uint8_t DXL_ID_DH2020 = 3;
+float deg1;
+float deg2;
+float deg3;
+
 
 const float DXL_PROTOCOL_VERSION = 2.0;
 
@@ -56,24 +66,59 @@ Dynamixel2Arduino dxl(DXL_SERIAL, DXL_DIR_PIN);
 //This namespace is required to use Control table item names
 using namespace ControlTableItem;
 
-void Set_target_angle(float angle1, const uint8_t Moteur1,
-                      float angle2, const uint8_t Moteur2,
-                      float angle3, const uint8_t Moteur3){
+void Set_target_angle(){
 
-  float position1 = dxl.getPresentPosition(Moteur1, UNIT_DEGREE);
-  float position2 = dxl.getPresentPosition(Moteur2, UNIT_DEGREE);
-  float position3 = dxl.getPresentPosition(Moteur3, UNIT_DEGREE);
-  dxl.setGoalPosition(Moteur1, angle1, UNIT_DEGREE);
-  dxl.setGoalPosition(Moteur2, angle2, UNIT_DEGREE);
-  dxl.setGoalPosition(Moteur3, angle3, UNIT_DEGREE);
+  float position1 = dxl.getPresentPosition(DXL_ID_DH2028, UNIT_DEGREE);
+  float position2 = dxl.getPresentPosition(DXL_ID_DH1007, UNIT_DEGREE);
+  float position3 = dxl.getPresentPosition(DXL_ID_DH2020, UNIT_DEGREE);
+  dxl.setGoalPosition(DXL_ID_DH2028, deg1, UNIT_DEGREE);
+  dxl.setGoalPosition(DXL_ID_DH1007, deg2, UNIT_DEGREE);
+  dxl.setGoalPosition(DXL_ID_DH2020, deg3, UNIT_DEGREE);
 
-  while (abs(angle1 - position1) > 1.0 && abs(angle2 - position2) > 1.0 && abs(angle3 - position3)> 1.0)
+  while (abs(deg1 - position1) > 1.0 && abs(deg2 - position2) > 1.0 && abs(deg3 - position3)> 1.0)
   {
-    position1 = dxl.getPresentPosition(Moteur1, UNIT_DEGREE);
-    position2 = dxl.getPresentPosition(Moteur2, UNIT_DEGREE);
-    position3 = dxl.getPresentPosition(Moteur3, UNIT_DEGREE);
+    position1 = dxl.getPresentPosition(DXL_ID_DH2028, UNIT_DEGREE);
+    position2 = dxl.getPresentPosition(DXL_ID_DH1007, UNIT_DEGREE);
+    position3 = dxl.getPresentPosition(DXL_ID_DH2020, UNIT_DEGREE);
   }
   delay(5000);
+}
+void gripper(){
+  //ferme la pince
+  myServo.write(fermer);
+  delay(1000);
+  //ouvre la pince
+  myServo.write(ouvert);
+  delay(1000);
+}
+void lecture(){
+
+  String message = DEBUG_SERIAL.readStringUntil('\n');
+  float a1, a2, a3;
+  a1 = DEBUG_SERIAL.parseFloat();
+  a2 = DEBUG_SERIAL.parseFloat();
+  a3 = DEBUG_SERIAL.parseFloat();
+
+  // Extraction des 3 valeurs
+  // Conversion Radian -> Degré (si Python envoie des Radians)
+  deg1 = (a1 * 180.0) / PI;
+  deg2 = (a2 * 180.0) / PI;
+  deg3 = (a3 * 180.0) / PI;
+
+  //rend la valeur négative en valeur positive
+  if (deg1<0)
+  {
+    deg1 = 360-deg1;
+  }
+  if (deg2<0)
+  {
+    deg2 = 360-deg2;
+  }
+  if (deg3<0)
+  {
+    deg3 = 360-deg3;
+  }
+  DEBUG_SERIAL.println("lecture fait");
 }
 
 void setup() {
@@ -83,7 +128,7 @@ void setup() {
   
   // Use UART port of DYNAMIXEL Shield to debug.
   DEBUG_SERIAL.begin(115200);
-  //while(!DEBUG_SERIAL); // On attend que la communication série pour les messages soit prête.
+  while(!DEBUG_SERIAL); // On attend que la communication série pour les messages soit prête.
 
   // Set Port baudrate to 57600bps. This has to match with DYNAMIXEL baudrate.
   dxl.begin(57600);
@@ -147,37 +192,24 @@ void setup() {
   DEBUG_SERIAL.println("Setup done.");
   DEBUG_SERIAL.print("Last error code: ");
   DEBUG_SERIAL.println(dxl.getLastLibErrCode());
-  dxl.setGoalPosition(DXL_ID_DH2020, 0, UNIT_DEGREE);
+  //dxl.setGoalPosition(DXL_ID_DH2020, 0, UNIT_DEGREE);
   dxl.setGoalPosition(DXL_ID_DH2028, 0, UNIT_DEGREE);
-  dxl.setGoalPosition(DXL_ID_DH1007, 0, UNIT_DEGREE);
+  //dxl.setGoalPosition(DXL_ID_DH1007, 216, UNIT_DEGREE);
+  myServo.attach(servoPin);
 }
 
 void loop() {
   // Vérifie si Python a envoyé des données sur le port USB
   if (DEBUG_SERIAL.available() > 0) {
-    
-    // Lit le message jusqu'à '\n'
-    //String message = DEBUG_SERIAL.readStringUntil('\n');
-    
-    float a1, a2, a3;
-    
-    a1 = DEBUG_SERIAL.parseFloat();
-    a2 = DEBUG_SERIAL.parseFloat();
-    a3 = DEBUG_SERIAL.parseFloat();
-    // Extraction des 3 valeurs
-    //if (sscanf(message.c_str(), "%f,%f,%f", &a1, &a2, &a3) >= 0) {
-      
-      // Conversion Radian -> Degré (si Python envoie des Radians)
-      float deg1 = (a1 * 180.0) / PI;
-      float deg2 = (a2 * 180.0) / PI;
-      float deg3 = (a3 * 180.0) / PI;
+    lecture();
 
-      // Envoi immédiat aux moteurs
-      dxl.setGoalPosition(DXL_ID_DH1007, deg1, UNIT_DEGREE);
-      dxl.setGoalPosition(DXL_ID_DH2028, deg2, UNIT_DEGREE);
-      dxl.setGoalPosition(DXL_ID_DH2020, deg3, UNIT_DEGREE);
-
-      // Réponse rapide pour confirmer la réception
-      DEBUG_SERIAL.println(String(a1)); 
-    }
+  }
+  //test
+  delay(2000);
+  // Envoi immédiat aux moteurs
+  Serial.println(dxl.getPresentPosition(DXL_ID_DH1007,UNIT_DEGREE));// max 216 degree min 19 degree
+  delay(2000);
+  //dxl.setGoalPosition(DXL_ID_DH1007,19,UNIT_DEGREE);
+  dxl.setGoalPosition(DXL_ID_DH2028, 100, UNIT_DEGREE);
+  //dxl.setGoalPosition(DXL_ID_DH2020, 0, UNIT_DEGREE);
   }
