@@ -54,9 +54,9 @@ const int servoPin = 5;
 const uint8_t DXL_ID_DH1007 = 1; 
 const uint8_t DXL_ID_DH2028 = 2; 
 const uint8_t DXL_ID_DH2020 = 3;
-float deg1;
-float deg2;
-float deg3;
+float deg1 = 0;
+float deg2 = 0;
+float deg3 = 0;
 
 
 const float DXL_PROTOCOL_VERSION = 2.0;
@@ -81,6 +81,7 @@ void Set_target_angle(){
     position2 = dxl.getPresentPosition(DXL_ID_DH1007, UNIT_DEGREE);
     position3 = dxl.getPresentPosition(DXL_ID_DH2020, UNIT_DEGREE);
   }
+  //appel de gripper voir comment il faut se rendre
   delay(5000);
 }
 void gripper(){
@@ -101,9 +102,9 @@ void lecture(){
 
   // Extraction des 3 valeurs
   // Conversion Radian -> Degré (si Python envoie des Radians)
-  deg1 = (a1 * 180.0) / PI;
-  deg2 = (a2 * 180.0) / PI;
-  deg3 = (a3 * 180.0) / PI;
+  deg1 = ((a1 * 180.0) / PI);
+  deg2 = ((a2 * 180.0) / PI);
+  deg3 = ((a3 * 180.0) / PI);
 
   //rend la valeur négative en valeur positive
   if (deg1<0)
@@ -171,7 +172,7 @@ void setup() {
     return;
   }
 
-  // Turn off torque when configuring items in EEPROM area
+  //Turn off torque when configuring items in EEPROM area
   dxl.torqueOff(DXL_ID_DH2020);
   dxl.setOperatingMode(DXL_ID_DH2020, OP_POSITION);
   dxl.torqueOn(DXL_ID_DH2020);
@@ -192,9 +193,9 @@ void setup() {
   DEBUG_SERIAL.println("Setup done.");
   DEBUG_SERIAL.print("Last error code: ");
   DEBUG_SERIAL.println(dxl.getLastLibErrCode());
-  //dxl.setGoalPosition(DXL_ID_DH2020, 0, UNIT_DEGREE);
+  dxl.setGoalPosition(DXL_ID_DH2020, 0, UNIT_DEGREE);
   dxl.setGoalPosition(DXL_ID_DH2028, 0, UNIT_DEGREE);
-  //dxl.setGoalPosition(DXL_ID_DH1007, 216, UNIT_DEGREE);
+  dxl.setGoalPosition(DXL_ID_DH1007, 216, UNIT_DEGREE);
   myServo.attach(servoPin);
 }
 
@@ -209,7 +210,7 @@ void loop() {
   // Envoi immédiat aux moteurs
   Serial.println(dxl.getPresentPosition(DXL_ID_DH1007,UNIT_DEGREE));// max 216 degree min 19 degree
   delay(2000);
-  //dxl.setGoalPosition(DXL_ID_DH1007,19,UNIT_DEGREE);
+  dxl.setGoalPosition(DXL_ID_DH1007,19,UNIT_DEGREE);
   dxl.setGoalPosition(DXL_ID_DH2028, 100, UNIT_DEGREE);
-  //dxl.setGoalPosition(DXL_ID_DH2020, 0, UNIT_DEGREE);
-  }
+  dxl.setGoalPosition(DXL_ID_DH2020, 0, UNIT_DEGREE);
+}
