@@ -107,18 +107,6 @@ void lecture(){
   deg3 = ((a3 * 180.0) / PI);
 
   //rend la valeur négative en valeur positive
-  if (deg1<0)
-  {
-    deg1 = 360-deg1;
-  }
-  if (deg2<0)
-  {
-    deg2 = 360-deg2;
-  }
-  if (deg3<0)
-  {
-    deg3 = 360-deg3;
-  }
   DEBUG_SERIAL.println("lecture fait");
 }
 
@@ -174,43 +162,56 @@ void setup() {
 
   //Turn off torque when configuring items in EEPROM area
   dxl.torqueOff(DXL_ID_DH2020);
-  dxl.setOperatingMode(DXL_ID_DH2020, OP_POSITION);
+  dxl.setOperatingMode(DXL_ID_DH2020, OP_EXTENDED_POSITION);
   dxl.torqueOn(DXL_ID_DH2020);
 
   dxl.torqueOff(DXL_ID_DH2028);
-  dxl.setOperatingMode(DXL_ID_DH2028, OP_POSITION);
+  dxl.setOperatingMode(DXL_ID_DH2028, OP_EXTENDED_POSITION);
   dxl.torqueOn(DXL_ID_DH2028);
 
   dxl.torqueOff(DXL_ID_DH1007);
-  dxl.setOperatingMode(DXL_ID_DH1007, OP_POSITION);
+  dxl.setOperatingMode(DXL_ID_DH1007, OP_EXTENDED_POSITION);
   dxl.torqueOn(DXL_ID_DH1007);
 
   // Limit the maximum velocity in Position Control Mode. Use 0 for Max speed
-  dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID_DH2020, 30);
-  dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID_DH2028, 30);
-  dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID_DH1007, 30);
+  dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID_DH2020, 15);
+  dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID_DH2028, 15);
+  dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID_DH1007, 15);
 
   DEBUG_SERIAL.println("Setup done.");
   DEBUG_SERIAL.print("Last error code: ");
   DEBUG_SERIAL.println(dxl.getLastLibErrCode());
   dxl.setGoalPosition(DXL_ID_DH2020, 0, UNIT_DEGREE);
   dxl.setGoalPosition(DXL_ID_DH2028, 0, UNIT_DEGREE);
-  dxl.setGoalPosition(DXL_ID_DH1007, 216, UNIT_DEGREE);
+  dxl.setGoalPosition(DXL_ID_DH1007, 127, UNIT_DEGREE);
   myServo.attach(servoPin);
+  delay(2000);
 }
 
 void loop() {
   // Vérifie si Python a envoyé des données sur le port USB
   if (DEBUG_SERIAL.available() > 0) {
     lecture();
-
   }
+  float target = -97;
+  
+  /*if (abs(dxl.getPresentPosition(DXL_ID_DH2020,UNIT_DEGREE)-target) > 180){
+    dxl.setGoalVelocity(DXL_ID_DH2020, -15);
+  }*/
   //test
+  //float posi = dxl.getPresentPosition(DXL_ID_DH2020,UNIT_DEGREE) + target;
   delay(2000);
   // Envoi immédiat aux moteurs
-  Serial.println(dxl.getPresentPosition(DXL_ID_DH1007,UNIT_DEGREE));// max 216 degree min 19 degree
+  Serial.println(dxl.getPresentPosition(DXL_ID_DH2028,UNIT_DEGREE));// max 216 degree min 19 degree
+  Serial.println(dxl.getPresentPosition(DXL_ID_DH1007,UNIT_DEGREE));
+  Serial.println(dxl.getPresentPosition(DXL_ID_DH2020,UNIT_DEGREE));
   delay(2000);
-  dxl.setGoalPosition(DXL_ID_DH1007,19,UNIT_DEGREE);
-  dxl.setGoalPosition(DXL_ID_DH2028, 100, UNIT_DEGREE);
-  dxl.setGoalPosition(DXL_ID_DH2020, 0, UNIT_DEGREE);
+  dxl.setGoalPosition(DXL_ID_DH2028, 0, UNIT_DEGREE);
+  dxl.setGoalPosition(DXL_ID_DH1007, 127,UNIT_DEGREE);
+  dxl.setGoalPosition(DXL_ID_DH2020, target, UNIT_DEGREE);// angle entre 230 et 128 
+  delay(10000);
+  dxl.setGoalPosition(DXL_ID_DH2020, -40, UNIT_DEGREE);
+  delay(10000);
+  dxl.setGoalPosition(DXL_ID_DH2020, 20, UNIT_DEGREE);
+  delay(10000);
 }
