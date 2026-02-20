@@ -2,9 +2,9 @@
 
 class Donnees:
     # longueurs (m)
-    L1 = 0.20
-    L2 = 0.20
-    L3 = 0.10  # poignet -> bout effecteur
+    L1 = 0.195
+    L2 = 0.185
+    L3 = 0.05  # poignet -> bout effecteur
 
     # position world de la base
     wx, wy, wz = 0.0, 0.0, 0.0

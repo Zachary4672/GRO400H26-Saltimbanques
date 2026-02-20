@@ -81,7 +81,7 @@ def Calculate():
         j3 = -math.acos(c3)
     else:
         j3 =  math.acos(c3)
-
+        
 # 3) épaule (ATTENTION AU SIGNE — correction clé)
     phi  = math.atan2(-z_plan, r)
     beta = math.atan2(L2 * math.sin(j3), L1 + L2 * math.cos(j3))
