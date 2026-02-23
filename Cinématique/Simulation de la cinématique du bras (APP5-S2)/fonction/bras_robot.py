@@ -130,6 +130,28 @@ def Calculate():
     arrAngles = (j1, j2, j3, j4)
     global angles
     angles = arrAngles
+
+#cone de la camera
+#centre
+    cam0_x, cam0_y, cam0_z = donnees.x_cible, donnees.y_cible, 0
+    cam = np.array([[cam0_x],[cam0_y],[cam0_z]])
+    #contour
+    fov_h = np.deg2rad(110)
+    height = 480
+    width = 640
+    fov_v = 2 * np.arctan(np.tan(fov_h/2) * (height/width))
+    R = donnees.z_cible
+    half_h = R * np.tan(fov_h/2)
+    half_w = R * np.tan(fov_v/2)
+
+    corners_local = np.array([
+        [ half_w,  half_h, 0],
+        [ half_w, -half_h, 0],
+        [-half_w, -half_h, 0],
+        [-half_w,  half_h, 0]
+    ]).T
+    r_cam = r_ew @ np.array([[0,0,1],[0,1,0],[1,0,0]])
+    corners_world = cam + r_cam @ corners_local
     
 
     print("Base      =", arrP_w0.ravel())
