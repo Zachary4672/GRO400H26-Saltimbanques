@@ -57,6 +57,10 @@ const uint8_t DXL_ID_DH2020 = 3;
 float deg1 = 0;
 float deg2 = 0;
 float deg3 = 0;
+bool home = 0;
+String LastMessage;
+char buffer[64];
+int idx = 0;
 
 
 const float DXL_PROTOCOL_VERSION = 2.0;
@@ -75,14 +79,14 @@ void Set_target_angle(){
   dxl.setGoalPosition(DXL_ID_DH1007, deg2, UNIT_DEGREE);
   dxl.setGoalPosition(DXL_ID_DH2020, deg3, UNIT_DEGREE);
 
-  while (abs(deg1 - position1) > 1.0 && abs(deg2 - position2) > 1.0 && abs(deg3 - position3)> 1.0)
+  while (abs(deg1 - position1) <= 1.0 && abs(deg2 - position2) <= 1.0 && abs(deg3 - position3) <= 1.0)
   {
     position1 = dxl.getPresentPosition(DXL_ID_DH2028, UNIT_DEGREE);
     position2 = dxl.getPresentPosition(DXL_ID_DH1007, UNIT_DEGREE);
     position3 = dxl.getPresentPosition(DXL_ID_DH2020, UNIT_DEGREE);
   }
   //appel de gripper voir comment il faut se rendre
-  delay(5000);
+  //delay(5000);
 }
 void gripper(){
   //ferme la pince
@@ -93,21 +97,43 @@ void gripper(){
   delay(1000);
 }
 void lecture(){
-
-  String message = DEBUG_SERIAL.readStringUntil('\n');
   float a1, a2, a3;
-  a1 = DEBUG_SERIAL.parseFloat();
-  a2 = DEBUG_SERIAL.parseFloat();
-  a3 = DEBUG_SERIAL.parseFloat();
+  String msg = DEBUG_SERIAL.readStringUntil('\n');
+  if(msg.startsWith("#Joint,")){
+    int commaIndex = msg.indexOf(',');
+    int zigIndex = msg.indexOf('~');
+    int spaceIndex = msg.indexOf(' ');
+    int starIndex = msg.indexOf('*');
 
-  // Extraction des 3 valeurs
-  // Conversion Radian -> Degré (si Python envoie des Radians)
-  deg1 = ((a1 * 180.0) / PI);
-  deg2 = ((a2 * 180.0) / PI);
-  deg3 = ((a3 * 180.0) / PI);
+    if (commaIndex != -1 && starIndex != -1)
+    {
+      String value_A1 = msg.substring(commaIndex + 1, zigIndex);
+      String value_A2 = msg.substring(zigIndex + 1, spaceIndex);
+      String value_A3 = msg.substring(spaceIndex + 1, starIndex);
+      a1 = value_A1.toFloat();
+      a2 = value_A2.toFloat();
+      a3 = value_A3.toFloat();
 
-  //rend la valeur négative en valeur positive
-  DEBUG_SERIAL.println("lecture fait");
+      //DEBUG_SERIAL.println(a1);
+      //DEBUG_SERIAL.println(a2);
+      //DEBUG_SERIAL.println(a3);
+      
+      // ici tu utilises a1 a2 a3
+      deg1 = ((a1 * 180.0) / PI);
+      deg2 = ((a2 * 180.0) / PI)+27;
+      if(home){
+          deg3 = ((a3 * 180.0) / PI) + 360;
+        }
+      else{
+        deg3 = ((a3 * 180.0) / PI);
+      }
+      DEBUG_SERIAL.print(deg1);
+      DEBUG_SERIAL.print(" ");
+      DEBUG_SERIAL.print(deg2);
+      DEBUG_SERIAL.print(" ");
+      DEBUG_SERIAL.println(deg3);      
+    }
+  }
 }
 
 void setup() {
@@ -117,7 +143,7 @@ void setup() {
   
   // Use UART port of DYNAMIXEL Shield to debug.
   DEBUG_SERIAL.begin(115200);
-  while(!DEBUG_SERIAL); // On attend que la communication série pour les messages soit prête.
+  //while(!DEBUG_SERIAL); // On attend que la communication série pour les messages soit prête.
 
   // Set Port baudrate to 57600bps. This has to match with DYNAMIXEL baudrate.
   dxl.begin(57600);
@@ -181,37 +207,31 @@ void setup() {
   DEBUG_SERIAL.println("Setup done.");
   DEBUG_SERIAL.print("Last error code: ");
   DEBUG_SERIAL.println(dxl.getLastLibErrCode());
-  dxl.setGoalPosition(DXL_ID_DH2020, 0, UNIT_DEGREE);
-  dxl.setGoalPosition(DXL_ID_DH2028, 0, UNIT_DEGREE);
-  dxl.setGoalPosition(DXL_ID_DH1007, 127, UNIT_DEGREE);
+
+  if (dxl.getPresentPosition(DXL_ID_DH2020,UNIT_DEGREE)>= 230){
+    dxl.setGoalPosition(DXL_ID_DH2020, 270, UNIT_DEGREE);
+    home = true;
+  }
+  else{
+    dxl.setGoalPosition(DXL_ID_DH2020, -90, UNIT_DEGREE);
+    home = false;
+  }
+  dxl.setGoalPosition(DXL_ID_DH2028, 45, UNIT_DEGREE);
+  dxl.setGoalPosition(DXL_ID_DH1007, 117, UNIT_DEGREE);//*/
   myServo.attach(servoPin);
   delay(2000);
 }
 
 void loop() {
   // Vérifie si Python a envoyé des données sur le port USB
-  if (DEBUG_SERIAL.available() > 0) {
+  //Serial.println(home);
+  if (DEBUG_SERIAL.available()) {
     lecture();
+    Set_target_angle();
   }
-  float target = -97;
-  
-  /*if (abs(dxl.getPresentPosition(DXL_ID_DH2020,UNIT_DEGREE)-target) > 180){
-    dxl.setGoalVelocity(DXL_ID_DH2020, -15);
-  }*/
-  //test
-  //float posi = dxl.getPresentPosition(DXL_ID_DH2020,UNIT_DEGREE) + target;
-  delay(2000);
   // Envoi immédiat aux moteurs
-  Serial.println(dxl.getPresentPosition(DXL_ID_DH2028,UNIT_DEGREE));// max 216 degree min 19 degree
+  /*Serial.println(dxl.getPresentPosition(DXL_ID_DH2028,UNIT_DEGREE));// max 216 degree min 19 degree
   Serial.println(dxl.getPresentPosition(DXL_ID_DH1007,UNIT_DEGREE));
   Serial.println(dxl.getPresentPosition(DXL_ID_DH2020,UNIT_DEGREE));
-  delay(2000);
-  dxl.setGoalPosition(DXL_ID_DH2028, 0, UNIT_DEGREE);
-  dxl.setGoalPosition(DXL_ID_DH1007, 127,UNIT_DEGREE);
-  dxl.setGoalPosition(DXL_ID_DH2020, target, UNIT_DEGREE);// angle entre 230 et 128 
-  delay(10000);
-  dxl.setGoalPosition(DXL_ID_DH2020, -40, UNIT_DEGREE);
-  delay(10000);
-  dxl.setGoalPosition(DXL_ID_DH2020, 20, UNIT_DEGREE);
-  delay(10000);
+  delay(2000);//*/
 }
