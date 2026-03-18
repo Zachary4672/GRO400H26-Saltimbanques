@@ -2,6 +2,7 @@
 
 class Donnees:
     # longueurs (m)
+    L0 = 0.05
     L1 = 0.195
     L2 = 0.185
     L3 = 0.05  # poignet -> bout effecteur
@@ -13,6 +14,10 @@ class Donnees:
     x_cible = 0.10
     y_cible = 0.10
     z_cible = 0.10
+    Angle_cible = 1
+
+    #Position caméra par rapport à L3
+    #x_cam = 
 
     # Orientation de l'outil: perpendiculaire au sol (plan XY)
     # -1 = pointe vers le sol (-z), +1 = pointe vers le haut (+z)
