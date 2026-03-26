@@ -10,6 +10,7 @@ import time
 
 frame_queue = q.Queue(maxsize=1)
 disp_queue = q.Queue(maxsize=1)
+pos_queue = q.Queue(maxsize=1)
 model = YOLO("jelly_bean1.pt")  # nano = plus léger
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
@@ -34,6 +35,7 @@ def capture_frame(cap, frame_queue):
         time.sleep(0.001)
 
 def image_process(frame_queue):
+    pos_JB = []
     prev_angle = None
     while True:
         try:
@@ -129,7 +131,12 @@ def image_process(frame_queue):
             #centre JB
 
 
-            pos_JB.append((cx, cy))
+            pos_JB.append({
+                'x': cx,
+                'y': cy,
+                'angle': angle,
+                'color':"unknow" # remplacer par couleur éventuellement
+            })
             cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
             # cv2.line(frame, (int(cx), int(cy)), (int(cx+dx), int(cy+dy)), (255, 0, 0), 2)
 
@@ -137,6 +144,12 @@ def image_process(frame_queue):
             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
             cv2.drawContours(frame, [box_pts], 0, (0, 0, 255), 2)
 
+        if pos_queue.full():
+            try:
+                pos_queue.get_nowait()
+            except q.Empty:
+                pass
+        pos_queue.put(pos_JB)
         annotated = results[0].plot()
 
         if disp_queue.full():
@@ -160,6 +173,13 @@ while True:
         cv2.imshow("YOLO", frame)
     if cv2.waitKey(1) == 27:
         break
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord('p'):
+        if not pos_queue.empty():
+            pos_JB = pos_queue.get()
+            print(f"Position JB {pos_JB}")
+
+
 
 cap.release()
 cv2.destroyAllWindows()
