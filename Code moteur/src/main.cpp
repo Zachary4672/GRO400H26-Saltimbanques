@@ -66,6 +66,7 @@ int v3 = 30;
 // variable selon ou est le moteur pour empècher le déplacement du mauvais côter
 bool home = 0;
 bool lineaire = 0;
+bool line_fin = 0;
 
 const float DXL_PROTOCOL_VERSION = 2.0;
 
@@ -127,9 +128,9 @@ void get_new_velo(){
       String value_V3 = msg.substring(exclaIndex + 1, starIndex);
       
       //redifinit les valeurs envoyé par python(rad/s) en valeur utile pour les dynamixels 
-      v1 = abs(value_V1.toFloat()*9.549/0.229);
-      v2 = abs(value_V2.toFloat()*9.549/0.229);
-      v3 = abs(value_V3.toFloat()*9.549/0.229);
+      v1 = abs(value_V1.toFloat())*9.549/0.229;
+      v2 = abs(value_V2.toFloat())*9.549/0.229;
+      v3 = abs(value_V3.toFloat())*9.549/0.229;
       if (v1==0)
       {
         v1 = 1;
@@ -163,7 +164,7 @@ void Set_target_angle(){
 
   
   //vérifie quand les 3 moteurs ont atteint leurs positions finale 
-  while (abs(deg1 - position1) > 7.0 || abs(deg2 - position2) > 7.0 || abs(deg3 - position3)> 7.0)
+  while (abs(deg1 - position1) > 4.0 || abs(deg2 - position2) > 4.0 || abs(deg3 - position3)> 4.0)
   {
     position1 = dxl.getPresentPosition(Joint_1, UNIT_DEGREE);
     position2 = dxl.getPresentPosition(Joint_2, UNIT_DEGREE);
@@ -171,7 +172,6 @@ void Set_target_angle(){
 
     if(lineaire == true){
       //si on est en déplacement linéaire change la vitesse de chaque moteur
-      get_new_velo();
       //renvoie les position en RAD au code de cinématique et lui dit qu'Il bouge encore
       if (home)
       {
@@ -205,6 +205,18 @@ void Set_target_angle(){
   }
   else{
     DEBUG_SERIAL.println("Doneline a b c");
+    delay(100);
+    if (home && line_fin == true)
+    {
+      String mess = "angle "+String((position1-45)*DEG_TO_RAD)+" "+String((position2)*-DEG_TO_RAD)+" "+String((position3-360)*-DEG_TO_RAD);
+      DEBUG_SERIAL.println(mess);
+      //DEBUG_SERIAL.println((position3-360)*DEG_TO_RAD); 
+    }
+    else{
+      String mess = "angle "+String((position1-45)*DEG_TO_RAD)+" "+String((position2)*-DEG_TO_RAD)+" "+String((position3)*-DEG_TO_RAD);
+      DEBUG_SERIAL.println(mess);
+      //DEBUG_SERIAL.println((position3)*DEG_TO_RAD); a
+    }
   }
   //appel de gripper voir comment il faut se rendre
   //delay(5000);
@@ -252,6 +264,7 @@ void lecture(){
   }
   if(msg.startsWith("#Lineaire,")){
     lineaire = true;
+    line_fin = true;
     //#Lineaire,deg1~V1 deg2_V2-deg3
     int commaIndex = msg.indexOf(',');
     int zigIndex = msg.indexOf('~');
@@ -305,6 +318,7 @@ void lecture(){
   }
   if(msg.startsWith("#LineaireReverse,")){
     lineaire = true;
+    line_fin = false;
     //#Lineaire,deg1~V1 deg2_V2-deg3
     int commaIndex = msg.indexOf(',');
     int zigIndex = msg.indexOf('~');

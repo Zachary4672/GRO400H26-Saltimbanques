@@ -80,13 +80,14 @@ def Ry(theta):
  
  
  
-def Calculate(iState, fA1, fA2, fA3):
+def Calculate(iState, fA1, fA2, fA3, turn):
     global vitesse, p_ee_w, p_e1_w, p_e2_w, x_tool_w, angles, gangles
-    if iState == 1 or iState == 2:
-        if iState == 1:
+    if iState == 1 or iState == 2 or iState == 0:
+        if iState == 1 or turn == 1:
             q = 0.1
         else:
             q = 0
+    if iState == 1 or iState == 2:
     # -----------------------------
     # Base et cible
     # -----------------------------
@@ -199,8 +200,8 @@ def Calculate(iState, fA1, fA2, fA3):
                             [donnees.Donnees.wz]])
 
         p_ee_cible = np.array([[donnees.Donnees.x_cible],
-                               [donnees.Donnees.y_cible],
-                               [donnees.Donnees.z_cible]])
+                                [donnees.Donnees.y_cible],
+                               [donnees.Donnees.z_cible + q]])
 
         L1, L2, L3 = donnees.Donnees.L1, donnees.Donnees.L2, donnees.Donnees.L3
         sens = donnees.Donnees.sens_outil

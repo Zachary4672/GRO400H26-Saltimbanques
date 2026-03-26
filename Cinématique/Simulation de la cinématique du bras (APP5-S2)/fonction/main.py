@@ -79,7 +79,7 @@ while True:
         Parts[0] = "Turn"
         if turn == 0:
             directive = "Joint"
-            bras_robot.Calculate(1, 0.0, 0.0, 0.0)
+            bras_robot.Calculate(1, 0.0, 0.0, 0.0, 0)
 
             ParamInput = True
             tol = 0.1
@@ -109,13 +109,13 @@ while True:
             directive = "Lineaire"
 
             if turn == 0:
-                bras_robot.Calculate(2, 0.0, 0.0, 0.0)
+                bras_robot.Calculate(2, 0.0, 0.0, 0.0, 0)
             else:
-                bras_robot.Calculate(1, 0.0, 0.0, 0.0)
+                bras_robot.Calculate(1, 0.0, 0.0, 0.0, 0)
             
 
             while Parts[0] != "Doneline":
-                bras_robot.Calculate(0, float(Parts[1]), float(Parts[2]), float(Parts[3]))
+                bras_robot.Calculate(0, float(Parts[1]), float(Parts[2]), float(Parts[3]), turn)
                 
 
                 if tol < abs(J1 - bras_robot.angles[0]) or tol < abs(J2 - bras_robot.angles[1]) or tol < abs(J3 - bras_robot.angles[2] or turn == 1):
