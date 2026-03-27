@@ -13,11 +13,21 @@ disp_queue = q.Queue(maxsize=1)
 pos_queue = q.Queue(maxsize=1)
 model = YOLO("jelly_bean1.pt")  # nano = plus léger
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+#cap = cv2.VideoCapture(0, cv2.V4L2) #à changer lorsque sur le pi
 
 # dimension JB
 long= 1.8 # cm
 larg = 1.0 # cm
 ep = 0.8 # cm
+
+#valeur hue couleurs
+rouge_low = 10
+rouge_high = 170
+orange = 25
+jaune = 35
+vert = 85
+bleu = 130
+mauve = 160
 
 
 def capture_frame(cap, frame_queue):
@@ -44,14 +54,16 @@ def image_process(frame_queue):
             continue
 
         pos_JB = []
+        frame = cv2.calibrateCamera()
 
-        results = model(frame, conf=0.7)
+        results = model(frame, conf=0.4)
 
         for box in results[0].boxes:
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             roi = frame[y1:y2, x1:x2]
 
             hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+
 
             # exemple pour couleurs vives (à ajuster)
             lower = np.array([0, 80, 80])
@@ -61,6 +73,36 @@ def image_process(frame_queue):
             kernel = np.ones((5, 5), np.uint8)
             tresh = cv2.morphologyEx(tresh, cv2.MORPH_CLOSE, kernel)
             tresh = cv2.morphologyEx(tresh, cv2.MORPH_OPEN, kernel)
+            #Masque pour couleur
+            mask = tresh > 0
+            pixels = hsv[mask]
+
+            if len(pixels) == 0 :
+                color = "unknown"
+                continue
+
+            mean_h = np.mean(pixels[:,0])
+
+            #classification couleur
+            if mean_h < rouge_low or mean_h > rouge_high:
+                color = "rouge"
+            elif mean_h < orange:
+                color = "orange"
+            elif mean_h < jaune:
+                color = "jaune"
+            elif mean_h < vert:
+                color = "vert"
+            elif mean_h < bleu:
+                color = "bleu"
+            elif mean_h < mauve:
+                color = "mauve"
+            else:
+                color = "unknown"
+
+            #filtre saturation
+            mean_s = np.mean(pixels[:,1])
+            if mean_s < 50:
+                color = "unknown"
             contours, _ = cv2.findContours(tresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             if not contours:
                 continue
@@ -82,7 +124,7 @@ def image_process(frame_queue):
                 cx = int(M["m10"] / M["m00"]) + x1
                 cy = int(M["m01"] / M["m00"]) + y1
 
-            #
+
             test_x = cx+ vx * length
             test_y = cy + vy * length
             inside = cv2.pointPolygonTest(cnt, (test_x, test_y), False)
@@ -135,7 +177,7 @@ def image_process(frame_queue):
                 'x': cx,
                 'y': cy,
                 'angle': angle,
-                'color':"unknow" # remplacer par couleur éventuellement
+                'color': color # remplacer par couleur éventuellement
             })
             cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
             # cv2.line(frame, (int(cx), int(cy)), (int(cx+dx), int(cy+dy)), (255, 0, 0), 2)
