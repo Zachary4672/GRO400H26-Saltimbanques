@@ -42,7 +42,7 @@ def on_message(client, userdata, msg):
     if msg.topic == TOPIC_CLIENTS:
         iNb_clients = int(payload)
 
-    elif msg.topic == TOPIC_START:
+    if msg.topic == TOPIC_START:
         if payload == "true":
             bStart_flag = True
         else:
@@ -109,6 +109,7 @@ def connect():
     client.on_connect = on_connect
     client.on_message = on_message
     client.connect(BROKER_IP,BROKER_PORT,60)
+    client.loop_start()
     if iError_Code != 0:
         return iError_Code
     else:
@@ -119,6 +120,7 @@ def connect():
 # ---------------------------------------------------
 def disconnect():
     client.disconnect()
+    client.loop_stop()
 
 # ---------------------------------------------------
 # PublishMessage: This function send a message that will be collected by the HMI
@@ -142,6 +144,11 @@ def PublishMessage(title, val):
 # This section is about setting the clients of MQTT
 # ----------------------------------------------------
 client = mqtt.Client()
+disconnect()
+client.loop_stop()
+connect()
+client.loop_start()
+
 
 
 
