@@ -13,6 +13,9 @@ class Donnees:
     # position world de la base
     wx, wy, wz = 0.0, 0.0, 0.0
 
+    # valeur y lors du pick
+    y_pick = 0.0
+
     # CIBLE du bout effecteur (world)
     x_cible = 0.10
     y_cible = 0.10
@@ -46,4 +49,9 @@ class Donnees:
     y_home = 2
     z_home = 3
 
-
+    x_r = 0.1
+    y_r = 0.1
+    x_b = 0.2
+    y_b = 0.1
+    x_j = 0.3
+    y_j = 0.1

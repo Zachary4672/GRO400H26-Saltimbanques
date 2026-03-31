@@ -103,7 +103,7 @@ def Calculate(bState, fA1, fA2, fA3):
 
     # MODE IK
 
-    if bState:
+    if bState==1:
 
         # Cible
 
@@ -179,6 +179,9 @@ def Calculate(bState, fA1, fA2, fA3):
     
     # MODE LINÉAIRE
 
-    else:
+    elif bState==2:
         # À FAIRE : linéaire
+        pass
+
+    else:
         pass
