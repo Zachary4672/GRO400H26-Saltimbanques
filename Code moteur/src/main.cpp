@@ -83,11 +83,10 @@ void setup() {
   
   // Use UART port of DYNAMIXEL Shield to debug.
   DEBUG_SERIAL.begin(115200);
-  //while(!DEBUG_SERIAL); // On attend que la communication série pour les messages soit prête.
+  while(!DEBUG_SERIAL); // On attend que la communication série pour les messages soit prête.
 
   // Set Port baudrate to 57600bps. This has to match with DYNAMIXEL baudrate.
   dxl.begin(57600);
-
   if (dxl.getLastLibErrCode()) {
     DEBUG_SERIAL.println("Could not init serial port!");
     DEBUG_SERIAL.print("Last error code: ");
@@ -147,37 +146,33 @@ void setup() {
   DEBUG_SERIAL.println("Setup done.");
   DEBUG_SERIAL.print("Last error code: ");
   DEBUG_SERIAL.println(dxl.getLastLibErrCode());
-  dxl.setGoalPosition(DXL_ID_DH2020, 0, UNIT_DEGREE);
-  dxl.setGoalPosition(DXL_ID_DH2028, 0, UNIT_DEGREE);
-  dxl.setGoalPosition(DXL_ID_DH1007, 0, UNIT_DEGREE);
 }
 
 void loop() {
-  // Vérifie si Python a envoyé des données sur le port USB
-  if (DEBUG_SERIAL.available() > 0) {
-    
-    // Lit le message jusqu'à '\n'
-    //String message = DEBUG_SERIAL.readStringUntil('\n');
-    
-    float a1, a2, a3;
-    
-    a1 = DEBUG_SERIAL.parseFloat();
-    a2 = DEBUG_SERIAL.parseFloat();
-    a3 = DEBUG_SERIAL.parseFloat();
-    // Extraction des 3 valeurs
-    //if (sscanf(message.c_str(), "%f,%f,%f", &a1, &a2, &a3) >= 0) {
-      
-      // Conversion Radian -> Degré (si Python envoie des Radians)
-      float deg1 = (a1 * 180.0) / PI;
-      float deg2 = (a2 * 180.0) / PI;
-      float deg3 = (a3 * 180.0) / PI;
+  // put your main code here, to run repeatedly:
+  
+  // Please refer to e-Manual(http://emanual.robotis.com/docs/en/parts/interface/dynamixel_shield/) for available range of value. 
+  // Set Goal Position in RAW value
+  
 
-      // Envoi immédiat aux moteurs
-      dxl.setGoalPosition(DXL_ID_DH1007, deg1, UNIT_DEGREE);
-      dxl.setGoalPosition(DXL_ID_DH2028, deg2, UNIT_DEGREE);
-      dxl.setGoalPosition(DXL_ID_DH2020, deg3, UNIT_DEGREE);
+  
+  
+  dxl.setGoalPosition(DXL_ID_DH1007, 1000);
+  dxl.setGoalPosition(DXL_ID_DH2028, 1000);
+  dxl.setGoalPosition(DXL_ID_DH2020, 1000);
 
-      // Réponse rapide pour confirmer la réception
-      DEBUG_SERIAL.println("ACK"); 
-    }
+  delay(5000);
+  /*int i_present_position = 0;
+
+  while (abs(1000 - i_present_position) > 10)
+  {
+    i_present_position = dxl.getPresentPosition(DXL_ID_DH2020);
   }
+  delay(2000);*/
+  float M1  = 0.0;
+  float M2  = 180.0;
+  float M3  = 64.0;
+
+  // Set Goal Position in DEGREE value
+  Set_target_angle(M1, DXL_ID_DH1007, M2, DXL_ID_DH2028, M3, DXL_ID_DH2020);
+}

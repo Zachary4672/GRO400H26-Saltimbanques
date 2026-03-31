@@ -5,7 +5,10 @@ class Donnees:
     L0 = 0.05
     L1 = 0.195
     L2 = 0.185
-    L3 = 0.05  # poignet -> bout effecteur
+    L3 = 0.10  # poignet -> bout effecteur
+    Lcam_y = 0.05
+    Lcam_x = 0.05
+    Lcam_z = 0
 
     # position world de la base
     wx, wy, wz = 0.0, 0.0, 0.0
@@ -26,3 +29,21 @@ class Donnees:
     # Configuration du coude
     # "bas" = elbow-down, "haut" = elbow-up
     config_coude = "bas"
+
+    x_cam1 = 1
+    y_cam1 = 2
+    z_cam1 = 3
+
+    x_cam2 = 4
+    y_cam2 = 5
+    z_cam2 = 6
+
+    x_cam3 = 7
+    y_cam3 = 8
+    z_cam3 = 9
+
+    x_home = 1
+    y_home = 2
+    z_home = 3
+
+
