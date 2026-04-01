@@ -17,8 +17,9 @@ Rouge = 1
 Bleu  = 2
 Jaune = 3
 
-z_pick = 0.0
-z_drop = 0.15
+z_pick = donnees.Donnees.z_pick
+z_drop = donnees.Donnees.z_drop
+hauteur_boite = donnees.Donnees.h_boite
 
 #Positions des pots (x, y)
 POTS = {
@@ -31,9 +32,9 @@ POTS = {
 def generate_pick(pil):
     x, y, angle, couleur = pil
     return [                                                        # list, pas np.array
-        [x, y, z_pick + 0.1, angle, Joint,    Ouvert, couleur],
+        [x, y, z_pick + hauteur_boite + 0.1, angle, Joint,    Ouvert, couleur],
         [x, y, z_pick,       angle, Lineaire,  Fermee, couleur],
-        [x, y, z_pick + 0.1, angle, Reverse,   Fermee, couleur],
+        [x, y, z_pick + hauteur_boite + 0.1, angle, Reverse,   Fermee, couleur],
     ]
 
 def generate_drop(pil):
@@ -50,7 +51,10 @@ def generate_trajectory(points):
     for pil in points:
         traj += generate_pick(pil)
         traj += generate_drop(pil)
+    PublishMessage("Item_dropped",couleur)
     return np.array(traj)
+    
+
 
 def compute_angles(traj):
     trajectoire = []
@@ -62,7 +66,7 @@ def compute_angles(traj):
         donnees.Donnees.y_cible     = y
         donnees.Donnees.z_cible     = z
         donnees.Donnees.angle_cible = angle
-        bras_robot.Calculate(1, fA1, fA2, fA3)  # bState=1 pour IK
+        bras_robot.Calculate(1, fA1, fA2, fA3, turn)  # bState=1 pour IK
 
         j1, j2, j3, j4 = bras_robot.angles
         trajectoire.append({
@@ -73,7 +77,7 @@ def compute_angles(traj):
         })
 
         # angles du point actuel = point de départ du prochain
-        fA1, fA2, fA3 = j1, j2, j3
+        fA1, fA2, fA3 = j1, -1*j2, -1*j3
 
     return trajectoire
 # TEST

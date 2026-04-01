@@ -63,6 +63,9 @@ def attendre_doneline(ser, timeout=15):
         if ligne.startswith("Doneline"):
             done_recu = True
             continue
+        if ligne.startswitth("Donejoint"):
+            done_recu = True
+            continue
         if done_recu:
             parts = ligne.split()
             if len(parts) >= 4:
@@ -82,11 +85,22 @@ def aller_a(ser, x, y, z, fA1=0.0, fA2=0.0, fA3=0.0):
     j1, j2, j3, j4 = bras_robot.angles
 
     envoyer_joint(ser, j1, j2, j3, j4)
-    result = attendre_angle(ser) #!!!
+    result = attendre_doneline(ser) #!!!
     if result:
         print(f"  Position atteinte : j1={result[0]:.3f} j2={result[1]:.3f} j3={result[2]:.3f}")
         return result[0], result[1], result[2], j4
     return j1, j2, j3, j4
+
+def detecter_pilules():
+    # Simuler la détection de pilules
+    # TODO : remplacer par la vraie détection caméra
+    return {
+        "pilules": [
+            {"x": 0.1, "y": 0.1, "angle": 0, "couleur": "rouge"},
+            {"x": 0.15, "y": 0.1, "angle": 45, "couleur": "bleu"},
+            {"x": 0.2, "y": 0.1, "angle": -30, "couleur": "jaune"},
+        ]   
+    }
 
 
 # Exécuter un point de trajectoire
@@ -132,7 +146,7 @@ def executer_point(ser, pt, fA1, fA2, fA3):
 # MAIN
 
 
-#COULEUR_MAP = {"rouge": Rouge, "bleu": Bleu, "jaune": Jaune} à définir
+COULEUR_MAP = {"rouge": Rouge, "bleu": Bleu, "jaune": Jaune} #à définir
 
 ser = connect_serial()
 if ser is None:
@@ -141,7 +155,7 @@ if ser is None:
 fA1 = fA2 = fA3 = 0.0
 
 try:
-    while True:
+    while is_started():
         # 1. Aller à la position scan
         print("\n--- Position scan ---")
         fA1, fA2, fA3, _ = aller_a(ser, X_SCAN, Y_SCAN, Z_SCAN, fA1, fA2, fA3)
@@ -182,7 +196,7 @@ try:
 
         time.sleep(1)
 
-except KeyboardInterrupt:
+except is_stopped():
     print("\nArrêt demandé.")
 finally:
     ser.close()

@@ -10,6 +10,10 @@ class Donnees:
     Lcam_x = 0.05
     Lcam_z = 0
 
+    h_boite = 0.15
+    z_pick = -h_boite
+    z_drop = h_boite + 0.05
+
     # position world de la base
     wx, wy, wz = 0.0, 0.0, 0.0
 
@@ -37,17 +41,7 @@ class Donnees:
     y_scan = 2
     z_scan = 3
 
-    x_cam2 = 4
-    y_cam2 = 5
-    z_cam2 = 6
-
-    x_cam3 = 7
-    y_cam3 = 8
-    z_cam3 = 9
-
-    x_home = 1
-    y_home = 2
-    z_home = 3
+   # Position des pots (x,y)
 
     x_r = 0.1
     y_r = 0.1
