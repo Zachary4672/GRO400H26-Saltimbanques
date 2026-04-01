@@ -6,7 +6,8 @@ import threading as th
 import queue as q
 import time
 
-
+# import warnings
+# warnings.filterwarnings("ignore")
 
 frame_queue = q.Queue(maxsize=1)
 disp_queue = q.Queue(maxsize=1)
@@ -14,6 +15,9 @@ pos_queue = q.Queue(maxsize=1)
 model = YOLO("jelly_bean1.pt")  # nano = plus léger
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 #cap = cv2.VideoCapture(0, cv2.V4L2) #à changer lorsque sur le pi
+
+# notification pour détecter JB
+run_detection = th.Event()
 
 # dimension JB
 long= 1.8 # cm
@@ -36,10 +40,10 @@ dist = np.load("dist.npy")
 
 
 def capture_frame(cap, frame_queue):
-    ret, frame = cap.read()
-    h, w = frame.shape[:2]
-
-    new_K, roi = cv2.getOptimalNewCameraMatrix(K, dist, (w, h), 1, (w, h))
+    # ret, frame = cap.read()
+    # h, w = frame.shape[:2]
+    #
+    # new_K, roi = cv2.getOptimalNewCameraMatrix(K, dist, (w, h), 1, (w, h))
     while True:
         ret, frame = cap.read()
 
@@ -50,8 +54,7 @@ def capture_frame(cap, frame_queue):
                 frame_queue.get_nowait()
             except q.Empty:
                 pass
-        frame = cv2.undistort(frame, K, dist, None, new_K)
-        
+
         frame_queue.put(frame)
         time.sleep(0.001)
 
@@ -59,6 +62,7 @@ def image_process(frame_queue):
     pos_JB = []
     prev_angle = None
     while True:
+        run_detection.wait()
         try:
             frame = frame_queue.get(timeout=0.01)
         except q.Empty:
@@ -214,6 +218,7 @@ def image_process(frame_queue):
                 pass
 
         disp_queue.put(frame)
+        run_detection.clear()
 
 
 
@@ -223,9 +228,15 @@ th.Thread(target=image_process, args=(frame_queue,), daemon=True).start()
 
 #Main
 while True:
+
+    if cv2.waitKey(1) == ord('d'):  # exemple touche clavier
+        run_detection.set()
     if not disp_queue.empty():
         frame = disp_queue.get()
         cv2.imshow("YOLO", frame)
+    if disp_queue.empty() and not frame_queue.empty():
+        frame = frame_queue.get()
+        cv2.imshow("No detection", frame)
     if cv2.waitKey(1) == 27:
         break
     key = cv2.waitKey(1) & 0xFF
@@ -238,99 +249,4 @@ while True:
 
 cap.release()
 cv2.destroyAllWindows()
-
-
-# while True:
-#     ret, frame = cap.read()
-#     if not ret:
-#         break
-#
-#     pos_JB = []
-#     results = model(frame, conf=0.5)
-#
-#     for box in results[0].boxes:
-#         x1, y1, x2, y2 = map(int, box.xyxy[0])
-#         #création d'une image locale pour un JB
-#         roi = frame[y1:y2, x1:x2]
-#
-#
-#
-#         # prétraitement de l'image du JB (ajouter ici filtre pour couleur)
-#         # gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-#         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-#
-#         # exemple pour couleurs vives (à ajuster)
-#         lower = np.array([0, 80, 80])
-#         upper = np.array([180, 255, 255])
-#
-#         tresh = cv2.inRange(hsv, lower, upper)
-#         # _, tresh = cv2.threshold(gray, 60, 255, cv2.THRESH_BINARY)
-#         # tresh = cv2.Canny(gray, 50, 150)
-#         #_, tresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-#         kernel = np.ones((5, 5), np.uint8)
-#         tresh = cv2.morphologyEx(tresh, cv2.MORPH_CLOSE, kernel)
-#         tresh = cv2.morphologyEx(tresh, cv2.MORPH_OPEN, kernel)
-#
-#         #contour d'un JB
-#         contours, _ = cv2.findContours(tresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-#         tresh_color = cv2.cvtColor(tresh, cv2.COLOR_GRAY2BGR)
-#         if contours:
-#             cnt = max(contours, key=cv2.contourArea)
-#             cv2.drawContours(tresh_color, [cnt], -1, (0, 0, 255), 2)
-#         cv2.imshow("contours", tresh_color)
-#
-#         # cv2.drawContours(tresh, [contours[0]], 0, (0, 0, 255), 2)
-#         # cv2.imshow("contours", tresh)
-#
-#         if not contours:
-#             continue
-#         #plus gros contour
-#         cnt = max(contours, key=cv2.contourArea)
-#         rect = cv2.minAreaRect(cnt)
-#         (cx_roi, cy_roi), (w, h), angle = rect
-#         print(w,h, angle)
-#         #if w > h:
-#             #angle += 90
-#
-#         cx, cy = (cx_roi+x1, cy_roi+y1)
-#
-#         # angle_rad = m.radians(angle)
-#         # dx = int(50*m.cos(angle_rad))
-#         # dy =int (50*m.sin(angle_rad))
-#
-#         # extraire les points du contour
-#         pts = cnt.reshape(-1, 2)
-#
-#         # PCA
-#         mean, eigenvectors, eigenvalues = cv2.PCACompute2(pts.astype(np.float32), mean=None)
-#
-#         # vecteur principal
-#         vx, vy = eigenvectors[0]
-#
-#         length = 50
-#         dx = int(length * vx)
-#         dy = int(length * vy)
-#
-#
-#         angle = m.degrees(m.atan2(vy, vx))
-#         # calcul angle
-#         pos_JB.append((cx, cy))
-#         cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
-#         #cv2.line(frame, (int(cx), int(cy)), (int(cx+dx), int(cy+dy)), (255, 0, 0), 2)
-#         box_pts = cv2.boxPoints(rect)
-#         box_pts = np.intp(box_pts)
-#         box_pts[:, 0] += x1
-#         box_pts[:, 1] += y1
-#         cv2.putText(frame, f"{cx:.0f},{cy:.0f}, angle : ¨{angle:.1f}", (int(cx+dx), int(cy+dy)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-#         cv2.drawContours(frame, [box_pts], 0, (0, 0, 255), 2)
-#
-#     key = cv2.waitKey(2) & 0xFF
-#
-#     if key == ord('p'):
-#         print("Allo")
-
-    # annotated = results[0].plot()
-    #
-    #
-    # cv2.imshow("YOLO", frame)
 
