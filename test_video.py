@@ -25,7 +25,7 @@ larg = 1.0 # cm
 ep = 0.8 # cm
 
 #valeur hue couleurs
-rouge_low = 10
+rouge_low = 8
 rouge_high = 170
 orange = 15
 jaune = 25
@@ -125,17 +125,27 @@ def image_process(frame_queue):
             if not contours:
                 continue
             cnt = max(contours, key=cv2.contourArea)
+            if cv2.contourArea(cnt) < 200:
+                continue
 
-            # extraire les points du contour
-            pts = cnt.reshape(-1, 2)
 
-            # PCA
-            mean, eigenvectors, eigenvalues = cv2.PCACompute2(pts.astype(np.float32), mean=None)
+            if len(cnt) < 5:
+                continue
 
-            # vecteur principal
-            vx, vy = eigenvectors[0]
+            ellipse = cv2.fitEllipse(cnt)
+            (cx_roi, cy_roi), (MA, ma), angle = ellipse
+
+            cx = int(cx_roi + x1)
+            cy = int(cy_roi + y1)
+
+            angle_rad = m.radians(angle)
+            vx = m.cos(angle_rad)
+            vy = m.sin(angle_rad)
 
             length = 50
+            dx = int(length * vx)
+            dy = int(length * vy)
+
 
             M = cv2.moments(cnt)
             if M["m00"] != 0:
@@ -143,12 +153,7 @@ def image_process(frame_queue):
                 cy = int(M["m01"] / M["m00"]) + y1
 
 
-            test_x = cx+ vx * length
-            test_y = cy + vy * length
-            inside = cv2.pointPolygonTest(cnt, (test_x, test_y), False)
-            if inside < 0:
-                vx = -vx
-                vy = -vy
+
             # vecteur normal (perpendiculaire)
             nx, ny = -vy, vx
 
@@ -169,12 +174,10 @@ def image_process(frame_queue):
             dx = int(length * vx)
             dy = int(length * vy)
 
-            angle = m.degrees(m.atan2(vy, vx))
 
 
 
             # lissage
-            alpha = 0.2
             if prev_angle is not None:
                 diff = angle - prev_angle
 
@@ -183,7 +186,7 @@ def image_process(frame_queue):
                 elif diff < -90:
                     angle += 180
 
-
+                alpha = 0.15
                 angle = alpha * angle + (1 - alpha) * prev_angle
 
             prev_angle = angle
