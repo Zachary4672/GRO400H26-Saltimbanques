@@ -40,13 +40,15 @@ dist = np.load("dist.npy")
 
 
 def capture_frame(cap, frame_queue):
-    # ret, frame = cap.read()
-    # h, w = frame.shape[:2]
-    #
-    # new_K, roi = cv2.getOptimalNewCameraMatrix(K, dist, (w, h), 1, (w, h))
+    ret, frame = cap.read()
+    h, w = frame.shape[:2]
+
+    new_K, roi = cv2.getOptimalNewCameraMatrix(K, dist, (w, h), 0, (w, h))
     while True:
         ret, frame = cap.read()
-
+        frame = cv2.undistort(frame, K, dist, None, new_K)
+        x, y, w, h = roi
+        frame = frame[y:y + h, x:x + w]
         if not ret:
             continue
         if frame_queue.full():
@@ -59,7 +61,6 @@ def capture_frame(cap, frame_queue):
         time.sleep(0.001)
 
 def image_process(frame_queue):
-    pos_JB = []
     prev_angle = None
     while True:
         run_detection.wait()
@@ -209,6 +210,7 @@ def image_process(frame_queue):
             except q.Empty:
                 pass
         pos_queue.put(pos_JB)
+        print(f"Position JB {pos_JB}")
         annotated = results[0].plot()
 
         if disp_queue.full():
@@ -231,6 +233,9 @@ while True:
 
     if cv2.waitKey(1) == ord('d'):  # exemple touche clavier
         run_detection.set()
+        # if not pos_queue.empty():
+        #     pos_JB = pos_queue.get()
+        #     print(f"Position JB {pos_JB}")
     if not disp_queue.empty():
         frame = disp_queue.get()
         cv2.imshow("YOLO", frame)
@@ -240,10 +245,7 @@ while True:
     if cv2.waitKey(1) == 27:
         break
     key = cv2.waitKey(1) & 0xFF
-    if key == ord('p'):
-        if not pos_queue.empty():
-            pos_JB = pos_queue.get()
-            print(f"Position JB {pos_JB}")
+
 
 
 

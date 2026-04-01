@@ -23,11 +23,13 @@ new_K2, roi2 = cv2.getOptimalNewCameraMatrix(K2, dist2, (w, h), 0, (w, h))
 while True:
 
     ret, frame = cap.read()
-    frame = cv2.undistort(frame, K, dist, None, new_K)
+    frame0 = cv2.undistort(frame, K, dist, None, new_K)
     frame1 = cv2.undistort(frame, K2, dist2, None, new_K2)
     x, y, w, h = roi
-    frame = frame[y:y + h, x:x + w]
-    cv2.imshow("capture1", frame)
+    x2, y2, w2, h2 = roi2
+    frame0 = frame[y:y + h, x:x + w]
+    frame1 = frame1[y:y2 + h, x:x2 + w]
+    cv2.imshow("capture1", frame0)
     cv2.imshow("capture2", frame1)
 
     key = cv2.waitKey(1)

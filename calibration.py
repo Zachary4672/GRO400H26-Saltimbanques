@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 import glob
 
-lar =9
-haut= 13
+lar =7
+haut= 7
 # damier
 chessboard_size = (lar,haut)
 
@@ -33,7 +33,7 @@ for fname in images:
         imgpoints.append(corners2)
 
         #affichage
-        cv2.drawChessboardCorners(img, chessboard_size, corners, ret)
+        cv2.drawChessboardCorners(img, chessboard_size, corners2, ret)
         cv2.imshow("corners", img)
         cv2.waitKey(100)
 
@@ -41,7 +41,7 @@ cv2.destroyAllWindows()
 
 #calibration
 ret, K, dist, rvecs, tvecs = cv2.calibrateCamera(
-    objpoints, imgpoints, gray.shape[::-1], None, None
+    objpoints, imgpoints, gray.shape[::-1], None, None, flags=cv2.CALIB_CB_ADAPTIVE_THRESH
 )
 
 print("K =\n", K)
