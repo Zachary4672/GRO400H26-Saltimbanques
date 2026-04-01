@@ -33,9 +33,9 @@ class Donnees:
     # "bas" = elbow-down, "haut" = elbow-up
     config_coude = "bas"
 
-    x_cam1 = 1
-    y_cam1 = 2
-    z_cam1 = 3
+    x_scan = 1
+    y_scan = 2
+    z_scan = 3
 
     x_cam2 = 4
     y_cam2 = 5
