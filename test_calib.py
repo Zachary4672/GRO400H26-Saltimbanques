@@ -12,13 +12,21 @@ i = 0
 ret, frame = cap.read()
 h, w = frame.shape[:2]
 
-new_K, roi = cv2.getOptimalNewCameraMatrix(K, dist, (w, h), 1, (w, h))
-new_K2, roi2 = cv2.getOptimalNewCameraMatrix(K2, dist2, (w, h), 1, (w, h))
+new_K, roi = cv2.getOptimalNewCameraMatrix(K, dist, (w, h), 0, (w, h))
+new_K2, roi2 = cv2.getOptimalNewCameraMatrix(K2, dist2, (w, h), 0, (w, h))
+
+
+
+
+# crop optionnel
+
 while True:
 
     ret, frame = cap.read()
     frame = cv2.undistort(frame, K, dist, None, new_K)
     frame1 = cv2.undistort(frame, K2, dist2, None, new_K2)
+    x, y, w, h = roi
+    frame = frame[y:y + h, x:x + w]
     cv2.imshow("capture1", frame)
     cv2.imshow("capture2", frame1)
 

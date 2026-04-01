@@ -2,14 +2,17 @@ import cv2
 import numpy as np
 import glob
 
-lar = 17
-haut= 11
+lar =9
+haut= 13
 # damier
 chessboard_size = (lar,haut)
 
+#critère de raffinement
+criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
 # points 3D
 objp = np.zeros((lar*haut, 3), np.float32)
-objp[:, :2] = np.mgrid[0:lar, 0:haut].T.reshape(-1, 2)
+objp[:, :2] = np.mgrid[0:chessboard_size[0], 0:chessboard_size[1]].T.reshape(-1, 2)
 
 objpoints = []
 imgpoints = []
@@ -25,14 +28,18 @@ for fname in images:
 
     if ret:
         objpoints.append(objp)
-        imgpoints.append(corners)
+        #raffiner les coins
+        corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+        imgpoints.append(corners2)
 
+        #affichage
         cv2.drawChessboardCorners(img, chessboard_size, corners, ret)
         cv2.imshow("corners", img)
         cv2.waitKey(100)
 
 cv2.destroyAllWindows()
 
+#calibration
 ret, K, dist, rvecs, tvecs = cv2.calibrateCamera(
     objpoints, imgpoints, gray.shape[::-1], None, None
 )
