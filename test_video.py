@@ -23,14 +23,23 @@ ep = 0.8 # cm
 #valeur hue couleurs
 rouge_low = 10
 rouge_high = 170
-orange = 25
-jaune = 35
+orange = 15
+jaune = 25
 vert = 85
-bleu = 130
-mauve = 160
+mauve = 120
+noir = 130
+rose = 180
+
+
+K = np.load("K.npy")
+dist = np.load("dist.npy")
 
 
 def capture_frame(cap, frame_queue):
+    ret, frame = cap.read()
+    h, w = frame.shape[:2]
+
+    new_K, roi = cv2.getOptimalNewCameraMatrix(K, dist, (w, h), 1, (w, h))
     while True:
         ret, frame = cap.read()
 
@@ -41,6 +50,8 @@ def capture_frame(cap, frame_queue):
                 frame_queue.get_nowait()
             except q.Empty:
                 pass
+        frame = cv2.undistort(frame, K, dist, None, new_K)
+        
         frame_queue.put(frame)
         time.sleep(0.001)
 
@@ -54,9 +65,8 @@ def image_process(frame_queue):
             continue
 
         pos_JB = []
-        frame = cv2.calibrateCamera()
 
-        results = model(frame, conf=0.4)
+        results = model(frame, conf=0.7)
 
         for box in results[0].boxes:
             x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -82,9 +92,8 @@ def image_process(frame_queue):
                 continue
 
             mean_h = np.mean(pixels[:,0])
-
             #classification couleur
-            if mean_h < rouge_low or mean_h > rouge_high:
+            if mean_h < rouge_low:
                 color = "rouge"
             elif mean_h < orange:
                 color = "orange"
@@ -92,10 +101,14 @@ def image_process(frame_queue):
                 color = "jaune"
             elif mean_h < vert:
                 color = "vert"
-            elif mean_h < bleu:
-                color = "bleu"
             elif mean_h < mauve:
                 color = "mauve"
+            elif mean_h < noir:
+                color = "noir"
+            elif mean_h < rouge_high:
+                color = "rouge"
+            elif mean_h < rose:
+                color = "rose"
             else:
                 color = "unknown"
 
@@ -182,7 +195,7 @@ def image_process(frame_queue):
             cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
             # cv2.line(frame, (int(cx), int(cy)), (int(cx+dx), int(cy+dy)), (255, 0, 0), 2)
 
-            cv2.putText(frame, f"{cx:.0f},{cy:.0f}, angle : {angle:.1f}", (int(cx + dx), int(cy + dy)),
+            cv2.putText(frame, f"{cx:.0f},{cy:.0f}, angle : {angle:.1f}, couleur : {color}, mean_h :{mean_h:.0f}, mean_s :{mean_s:.0f}", (int(cx + dx), int(cy + dy)),
             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
             cv2.drawContours(frame, [box_pts], 0, (0, 0, 255), 2)
 
