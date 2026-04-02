@@ -7,6 +7,8 @@ BROKER_PORT = 1883  #Port de connection que le HMI utilise
 TOPIC_CLIENTS = "$SYS/broker/clients/connected"
 TOPIC_START = "start"
 TOPIC_STOP = "stop"
+TOPIC_MOTORSTART = "StartMoteur"
+TOPIC_MOTORSTOP = "StopMoteur"
 
 #NOTE: Ce programme est en anglais puisque les acronymes (dont les variables) pour ce type de programme sont plus commun en anglais
 #NOTE: USING hungarian notation
@@ -16,6 +18,8 @@ TOPIC_STOP = "stop"
 iNb_clients = 2 #Number of clients detected (it is initially set to 2 because it takes time to be updated so a value of 2 will make it so that it wont break the code)
 bStart_flag = False #Start button
 bStop_flag = False #Stop button
+bMotorStop_flag = False #Motor stop button
+bMotorStart_flag = False #Motor start button
 iError_Code = 0 #This code is changed when the PI is trying to connect
 
 # --------------------------------------------------
@@ -27,6 +31,8 @@ def on_connect(client, userdata, flags, rc):
         client.subscribe(TOPIC_CLIENTS) #Connecting to each topics that will receive variables from the HMI
         client.subscribe(TOPIC_START)
         client.subscribe(TOPIC_STOP)
+        client.subscribe(TOPIC_MOTORSTART)
+        client.subscribe(TOPIC_MOTORSTOP)
         iError_Code = rc
     else:
         iError_Code = rc
@@ -48,7 +54,19 @@ def on_message(client, userdata, msg):
         else:
             bStart_flag = False
 
-    elif msg.topic == TOPIC_STOP:
+    if msg.topic == TOPIC_MOTORSTART:
+        if payload == "true":
+            bMotorStart_flag = True
+        else:
+            bMotorStart_flag = False
+
+    if msg.topic == TOPIC_MOTORSTOP:
+        if payload == "true":
+            bMotorStop_flag = True
+        else:
+            bMotorStop_flag = False
+
+    if msg.topic == TOPIC_STOP:
         if payload == "true":
             bStop_flag = True
         else:
@@ -82,6 +100,14 @@ def consume_flag(flag_name):
         value = bStop_flag
         return value
     
+    elif flag_name == "StopMoteur":
+        value = bMotorStop_flag
+        return value
+    
+    elif flag_name == "StartMoteur":
+        value = bMotorStart_flag
+        return value
+    
     return False
 
 # --------------------------------------------------
@@ -101,6 +127,24 @@ def is_stopped():
     #IF THE VALUE IS -1: THE CONNECTION IS LOST WITH THE HMI AND THE ROBOT SHOULD BE STOPPED
     #IF THE VALUE IS TRUE: THE STOP BUTTON GOT PUSHED AND THE ROBOT SHOULD STOP
     #IF THE VALUE IS FALSE: THE STOP BUTTON WASN'T PUSHED, VERIFY WITH THE START BUTTON TO KNOW IF THE ROBOT SHOULD START
+
+# ---------------------------------------------------
+# is_MotorStop: This function return if the stop-motor button is pushed or not
+# ---------------------------------------------------
+def is_MotorStop():
+    return consume_flag("StopMoteur")
+    #IF THE VALUE IS -1: THE CONNECTION IS LOST WITH THE HMI AND THE ROBOT SHOULD BE STOPPED
+    #IF THE VALUE IS TRUE: THE BUTTON GOT PUSHED AND THE ROBOT MOTOR SHOULD STOP WORKING
+    #IF THE VALUE IS FALSE: THE STOP BUTTON WASN'T PUSHED, VERIFY WITH THE MOTOR_START BUTTON TO KNOW IF THE ROBOT SHOULD START ITS MOTORS
+
+# ---------------------------------------------------
+# is_MotorStart: This function return if the start-motor button is pushed or not
+# ---------------------------------------------------
+def is_MotorStart():
+    return consume_flag("StartMoteur")
+    #IF THE VALUE IS -1: THE CONNECTION IS LOST WITH THE HMI AND THE ROBOT SHOULD BE STOPPED
+    #IF THE VALUE IS TRUE: THE BUTTON GOT PUSHED AND THE ROBOT MOTOR SHOULD START WORKING
+    #IF THE VALUE IS FALSE: THE STOP BUTTON WASN'T PUSHED, VERIFY WITH THE MOTOR_STOP BUTTON TO KNOW IF THE ROBOT SHOULD STOP ITS MOTORS
 
 # ---------------------------------------------------
 # Connect: This function call for a connection of the mqtt ONLY CALL THIS TO START A CONNECTION
@@ -133,7 +177,7 @@ def disconnect():
 # 5. J2_speed       <-- The value of this topic is a FLOAT
 # 6. J3_speed       <-- The value of this topic is a FLOAT
 # 7. Robot_state       <-- The value of this topic is a string informing what is the state of the robot (DROP, PICK, WAITING, SCANNING)
-# 8. Item_dropped      <-- The value of this topic is a boolean confirming that the pill is dropped in the corresponding container 
+# 8. Item_dropped      <-- The value of this topic is a string of this format: "color val" where val is a boolean confirming that the pill is dropped in the corresponding container
 # ---------------------------------------------------
 def PublishMessage(title, val):
     if title == "Item_dropped":
@@ -145,9 +189,8 @@ def PublishMessage(title, val):
 # ----------------------------------------------------
 client = mqtt.Client()
 disconnect()
-client.loop_stop()
 connect()
-client.loop_start()
+
 
 
 
