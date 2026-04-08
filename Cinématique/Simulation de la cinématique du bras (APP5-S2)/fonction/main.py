@@ -4,7 +4,7 @@ import donnees
 import bras_robot
 from pick_and_place import generate_trajectory, Rouge, Bleu, Jaune
 
-PORT  = "COM9"
+PORT  = "dev/ttyUSB0"  # à adapter selon votre système
 BAUD  = 115200
 
 
@@ -82,14 +82,14 @@ def aller_a(ser, x, y, z, fA1=0.0, fA2=0.0, fA3=0.0):
     donnees.Donnees.y_cible = y
     donnees.Donnees.z_cible = z
     bras_robot.Calculate(1, fA1, fA2, fA3)
-    j1, j2, j3, j4 = bras_robot.angles
+    j1, j2, j3, angle = bras_robot.angles
 
-    envoyer_joint(ser, j1, j2, j3, j4)
+    envoyer_joint(ser, j1, -j2, -j3, angle)
     result = attendre_doneline(ser) #!!!
     if result:
         print(f"  Position atteinte : j1={result[0]:.3f} j2={result[1]:.3f} j3={result[2]:.3f}")
-        return result[0], result[1], result[2], j4
-    return j1, j2, j3, j4
+        return result[0], result[1], result[2], angle
+    return j1, j2, j3, angle
 
 def detecter_pilules():
     # Simuler la détection de pilules
@@ -155,7 +155,7 @@ if ser is None:
 fA1 = fA2 = fA3 = 0.0
 
 try:
-    while is_started():
+    while True:
         # 1. Aller à la position scan
         print("\n--- Position scan ---")
         fA1, fA2, fA3, _ = aller_a(ser, X_SCAN, Y_SCAN, Z_SCAN, fA1, fA2, fA3)
@@ -196,7 +196,7 @@ try:
 
         time.sleep(1)
 
-except is_stopped():
+except KeyboardInterrupt:
     print("\nArrêt demandé.")
 finally:
     ser.close()

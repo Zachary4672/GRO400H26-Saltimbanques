@@ -2,10 +2,10 @@
 
 class Donnees:
     # longueurs (m)
-    L0 = 0.05
-    L1 = 0.195
-    L2 = 0.185
-    L3 = 0.10  # poignet -> bout effecteur
+    L0 = 0.046
+    L1 = 0.155
+    L2 = 0.175
+    L3 = 0.145725  # poignet -> bout effecteur
     Lcam_y = 0.05
     Lcam_x = 0.05
     Lcam_z = 0
@@ -22,7 +22,7 @@ class Donnees:
 
     # CIBLE du bout effecteur (world)
     x_cible = 0.10
-    y_cible = 0.10
+    y_cible = 0.20
     z_cible = 0.10
     Angle_cible = 1
 
