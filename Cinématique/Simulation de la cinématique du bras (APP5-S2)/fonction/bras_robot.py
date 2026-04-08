@@ -19,6 +19,8 @@ p_ee_w = 0
 # -----------------------------
 # Rotations
 # -----------------------------
+
+
 def fk_from_j123(arrP_w0, L1, L2, L3, sens, j1, j2, j3):
  
     global p_ee_w, p_e1_w, p_e2_w, x_tool_w
@@ -83,6 +85,42 @@ def load_xyz(filename = "donnees.json"):
         data = json.load(f)
  
     return data["x"], data["y"], data["z"]
+
+def fk_xyz(arrP_w0, L1, L2, L3, sens, j1, j2, j3):
+    """
+    Retourne la position (x,y,z) de l'effecteur à partir des angles
+    """
+
+    # Calcul j4 (contrainte outil vertical)
+    j4 = sens * (math.pi / 2) - (j2 + j3)
+
+    # Matrices de rotation
+    r_aw = Rz(j1)
+    r_ba = Ry(j2)
+    r_cb = Ry(j3)
+    r_ec = Ry(j4)
+
+    # Rotations cumulées
+    r_bw = r_aw @ r_ba
+    r_cw = r_bw @ r_cb
+    r_ew = r_cw @ r_ec
+
+    # Vecteurs des segments
+    v_0e1_b  = np.array([[L1],[0],[0]])
+    v_e1e2_c = np.array([[L2],[0],[0]])
+    v_e2ee_e = np.array([[-L3],[0],[0]])
+
+    # Positions successives
+    p_e1 = arrP_w0 + r_bw @ v_0e1_b
+    p_e2 = p_e1 + r_cw @ v_e1e2_c
+    p_ee = p_e2 + r_ew @ v_e2ee_e
+
+    # Extraction x,y,z
+    x = p_ee[0,0]
+    y = p_ee[1,0]
+    z = p_ee[2,0]
+
+    return x, y, z
  
 def Calculate(iState, fA1, fA2, fA3, turn):
     global vitesse, p_ee_w, p_e1_w, p_e2_w, x_tool_w, angles, gangles
@@ -199,7 +237,6 @@ def Calculate(iState, fA1, fA2, fA3, turn):
         # Cible cartésienne: donnees.Donnees.(x_cible,y_cible,z_cible)
         # Sortie: global vitesse = (qdot1,qdot2,qdot3,qdot4) en RAD/S
         # ---------------------------------------------------------
-        importlib.reload(donnees)
  
         # Base et cible
         arrP_w0 = np.array([[donnees.Donnees.wx],

@@ -3,72 +3,120 @@ import numpy as np
 import bras_robot
 import donnees
 
+turn = 0
+
+# -----------------------------
 # Déplacement
+# -----------------------------
 Joint    = 0
 Lineaire = 1
 Reverse  = 2
 
+# -----------------------------
 # Pince
+# -----------------------------
 Fermee = 1
 Ouvert = 0
 
-# Couleurs
-Rouge = 1
-Bleu  = 2
-Jaune = 3
+# -----------------------------
+# Couleurs (format interne = INT)
+# -----------------------------
+rouge = 1
+bleu  = 2
+jaune = 3
 
+# Mapping string → int
+COLOR_MAP = {
+    "rouge": rouge,
+    "bleu": bleu,
+    "jaune": jaune
+}
+
+# -----------------------------
+# Paramètres
+# -----------------------------
 z_pick = donnees.Donnees.z_pick
 z_drop = donnees.Donnees.z_drop
 hauteur_boite = donnees.Donnees.h_boite
 
-#Positions des pots (x, y)
+# -----------------------------
+# Positions des pots
+# -----------------------------
 POTS = {
-    Rouge: (donnees.Donnees.x_r, donnees.Donnees.y_r),
-    Bleu:  (donnees.Donnees.x_b, donnees.Donnees.y_b),
-    Jaune: (donnees.Donnees.x_j, donnees.Donnees.y_j),
+    rouge: (donnees.Donnees.x_r, donnees.Donnees.y_r),
+    bleu:  (donnees.Donnees.x_b, donnees.Donnees.y_b),
+    jaune: (donnees.Donnees.x_j, donnees.Donnees.y_j),
 }
 
+# -----------------------------
+# Normalisation couleur
+# -----------------------------
+def normalize_couleur(couleur):
+    if isinstance(couleur, str):
+        couleur = COLOR_MAP.get(couleur.lower())
 
+    if couleur not in POTS:
+        raise ValueError(f"Couleur invalide: {couleur} | Options: {list(POTS.keys())}")
+
+    return couleur
+
+# -----------------------------
+# PICK
+# -----------------------------
 def generate_pick(pil):
     x, y, angle, couleur = pil
-    return [                                                        # list, pas np.array
-        [x, y, z_pick + hauteur_boite + 0.1, angle, Joint,    Ouvert, couleur],
-        [x, y, z_pick,       angle, Lineaire,  Fermee, couleur],
-        [x, y, z_pick + hauteur_boite + 0.1, angle, Reverse,   Fermee, couleur],
+    couleur = normalize_couleur(couleur)
+
+    return [
+        [x, y, z_pick + hauteur_boite, angle, Joint, Fermee, couleur],
     ]
 
+# -----------------------------
+# DROP
+# -----------------------------
 def generate_drop(pil):
     x, y, angle, couleur = pil
-    xd, yd = POTS[couleur]  # position du pot selon la couleur
-    return [                                                        # list, pas np.array
-        [xd, yd, z_drop + 0.1, angle, Joint,    Fermee, couleur],
-        [xd, yd, z_drop,       angle, Lineaire,  Ouvert, couleur],
-        [xd, yd, z_drop + 0.1, angle, Reverse,   Ouvert, couleur],
+    couleur = normalize_couleur(couleur)
+
+    xd, yd = POTS[couleur]
+
+    return [
+        [xd, yd, z_drop, angle, Joint, Ouvert, couleur],
     ]
 
+# -----------------------------
+# TRAJECTOIRE
+# -----------------------------
 def generate_trajectory(points):
     traj = []
+
     for pil in points:
         traj += generate_pick(pil)
         traj += generate_drop(pil)
-    PublishMessage("Item_dropped",couleur)
+
     return np.array(traj)
-    
 
-
+# -----------------------------
+# CALCUL DES ANGLES (IK)
+# -----------------------------
 def compute_angles(traj):
     trajectoire = []
     fA1, fA2, fA3 = 0.0, 0.0, 0.0
 
     for pt in traj:
         x, y, z, angle, type_mvt, pince, couleur = pt
+
+        # Mise à jour cible
         donnees.Donnees.x_cible     = x
         donnees.Donnees.y_cible     = y
         donnees.Donnees.z_cible     = z
         donnees.Donnees.angle_cible = angle
-        bras_robot.Calculate(1, fA1, fA2, fA3, turn)  # bState=1 pour IK
+
+        # IK
+        bras_robot.Calculate(1, fA1, fA2, fA3, turn)
 
         j1, j2, j3, j4 = bras_robot.angles
+
         trajectoire.append({
             "angles":   (j1, j2, j3, j4),
             "type_mvt": type_mvt,
@@ -76,8 +124,8 @@ def compute_angles(traj):
             "couleur":  couleur,
         })
 
-        # angles du point actuel = point de départ du prochain
-        fA1, fA2, fA3 = j1, -1*j2, -1*j3
+        # Mise à jour pour continuité
+        fA1, fA2, fA3 = j1, -j2, -j3
 
     return trajectoire
 # TEST

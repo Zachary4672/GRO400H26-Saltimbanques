@@ -10,7 +10,7 @@ class Donnees:
     Lcam_x = 0.05
     Lcam_z = 0
 
-    h_boite = 0.15
+    h_boite = 0.086
     z_pick = -h_boite
     z_drop = h_boite + 0.05
 
@@ -37,15 +37,15 @@ class Donnees:
     # "bas" = elbow-down, "haut" = elbow-up
     config_coude = "bas"
 
-    x_scan = 1
-    y_scan = 2
-    z_scan = 3
+    x_scan = 0.2
+    y_scan = 0.0
+    z_scan = 0.1
 
    # Position des pots (x,y)
 
-    x_r = 0.1
-    y_r = 0.1
-    x_b = 0.2
-    y_b = 0.1
-    x_j = 0.3
-    y_j = 0.1
+    x_r = 0.06
+    y_r = 0.148
+    x_b = 0.00
+    y_b = 0.155
+    x_j = -0.06
+    y_j = 0.155

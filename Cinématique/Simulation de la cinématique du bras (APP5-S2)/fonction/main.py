@@ -2,9 +2,10 @@ import serial
 import time
 import donnees
 import bras_robot
-from pick_and_place import generate_trajectory, Rouge, Bleu, Jaune
+import json
+from pick_and_place import generate_trajectory, rouge, bleu, jaune
 
-PORT  = "dev/ttyUSB0"  # à adapter selon votre système
+PORT  = "/dev/ttyACM0"  # à adapter selon votre système
 BAUD  = 115200
 
 
@@ -12,7 +13,9 @@ BAUD  = 115200
 X_SCAN = donnees.Donnees.x_scan
 Y_SCAN = donnees.Donnees.y_scan
 Z_SCAN = donnees.Donnees.z_scan
-
+LastMessage = None
+turn = 0
+directive = "Joint"
 
 # Série
 
@@ -28,6 +31,17 @@ def connect_serial():
     except serial.SerialException as e:
         print(f"Erreur série : {e}")
         return None
+    
+
+def writingJSON(x_pos, y_pos, z_pos):
+    filename = "donnees.json"
+    data = {
+        "x" : x_pos,
+        "y" : y_pos,
+        "z" : z_pos
+    }
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
     
 
 def envoyer_joint(ser, j1, j2, j3, j4=0):
@@ -46,8 +60,8 @@ def envoyer_reverse(ser, j1, v1, j2, v2, j3, v3, j4=0):
 
 
 def envoyer_pince(ser, fermer=True):
-    msg = b"#Pince,1*\n" if fermer else b"#Pince,0*\n"
-    ser.write(msg)
+    msg = f"#Pince,1*\n" if fermer else f"#Pince,0*\n"
+    ser.write(msg.encode("utf-8"))
 
 
 
@@ -63,14 +77,13 @@ def attendre_doneline(ser, timeout=15):
         if ligne.startswith("Doneline"):
             done_recu = True
             continue
-        if ligne.startswitth("Donejoint"):
+        if ligne.startswith("Donejoint"):
             done_recu = True
             continue
         if done_recu:
             parts = ligne.split()
             if len(parts) >= 4:
                 return float(parts[1]), float(parts[2]), float(parts[3])
-    print("Doneline non recu")
     return None
 
 
@@ -78,10 +91,8 @@ def attendre_doneline(ser, timeout=15):
 
 
 def aller_a(ser, x, y, z, fA1=0.0, fA2=0.0, fA3=0.0):
-    donnees.Donnees.x_cible = x
-    donnees.Donnees.y_cible = y
-    donnees.Donnees.z_cible = z
-    bras_robot.Calculate(1, fA1, fA2, fA3)
+    writingJSON(x, y, z)
+    bras_robot.Calculate(1, fA1, fA2, fA3, turn)
     j1, j2, j3, angle = bras_robot.angles
 
     envoyer_joint(ser, j1, -j2, -j3, angle)
@@ -96,9 +107,9 @@ def detecter_pilules():
     # TODO : remplacer par la vraie détection caméra
     return {
         "pilules": [
-            {"x": 0.1, "y": 0.1, "angle": 0, "couleur": "rouge"},
-            {"x": 0.15, "y": 0.1, "angle": 45, "couleur": "bleu"},
-            {"x": 0.2, "y": 0.1, "angle": -30, "couleur": "jaune"},
+            {"x": 0.2, "y": 0.01, "angle": 0, "couleur": "rouge"},
+            {"x": 0.2, "y": 0.0, "angle": 45, "couleur": "bleu"},
+            {"x": 0.2, "y": -0.01, "angle": -30, "couleur": "jaune"},
         ]   
     }
 
@@ -108,45 +119,192 @@ def detecter_pilules():
 def executer_point(ser, pt, fA1, fA2, fA3):
     x, y, z, angle, type_mvt, pince, couleur = pt
 
-    donnees.Donnees.x_cible     = x
-    donnees.Donnees.y_cible     = y
-    donnees.Donnees.z_cible     = z
-    donnees.Donnees.angle_cible = angle
-    bras_robot.Calculate(1, fA1, fA2, fA3)
+    writingJSON(x, y, z)
+
+    bras_robot.Calculate(1, fA1, fA2, fA3, 1)
     j1, j2, j3, j4 = bras_robot.angles
 
     if type_mvt == 0:       # Joint
-        envoyer_joint(ser, j1, j2, j3, j4)
+        envoyer_joint(ser, j1, -j2, -j3, j4)
         result = attendre_doneline(ser)
 
     elif type_mvt == 1:     # Lineaire
         v1 = v2 = v3 = 0.5
-        envoyer_lineaire(ser, j1, v1, j2, v2, j3, v3, j4)
-        result = attendre_doneline(ser)
+        Move_lineaire("DoneJoint")
 
     else:                   # Reverse
         v1 = v2 = v3 = 0.5
-        envoyer_reverse(ser, j1, v1, j2, v2, j3, v3, j4)
-        result = attendre_doneline(ser)
+        Move_ReverseLineaire("DoneLine")
 
     if pince == 1:
         print(f"  → FERMER pince")
         envoyer_pince(ser, fermer=True)
         time.sleep(0.8)
+        Move_ReverseLineaire("DoneLine")
     else:
         print(f"  → OUVRIR pince")
         envoyer_pince(ser, fermer=False)
         time.sleep(0.8)
+        Move_ReverseLineaire("DoneLine")
 
     if result:
         return result[0], result[1], result[2]
     return j1, j2, j3
 
+#Fonction: envoyer_angles(ser, a1, b1, a2, b2, a3, b3): Envoie des angles à l'arduino pour un prochain mouvement
+def envoyer_angles(ser, a1, b1, a2, b2, a3, b3):
+    global turn, directive
+    if directive == "Joint":
+        message = "#"+ directive + f",{a1:.4f}~{a2:.4f} {a3:.4f}*\n"
+    elif directive == "Lineaire" and turn == 0:
+        message = "#" + directive + f",{a1:.4f}~{b1:.4f} {a2:.4f}_{b2:.4f}&{a3:.4f}!{b3:.4f}*\n"
+    elif directive == "LineaireReverse" and turn == 1:
+        message = "#" + "LineaireReverse" + f",{a1:.4f}~{b1:.4f} {a2:.4f}_{b2:.4f}&{a3:.4f}!{b3:.4f}*\n"
+    ser.write(message.encode("utf-8"))
+ 
+ 
+ 
+ 
+#Fonction: lire_responses permet de recevoir les informations du buffer "ser" et vérifier les réponses
+def lire_latest_ligne_complete(ser, last_line = None):
+ 
+
+
+    # Lire tout ce qui est disponible
+    data = ser.read(ser.in_waiting or 0)
+    if not data:
+        return last_line
+
+
+    # Accumuler dans un buffer local (à garder entre appels)
+    text = data.decode("utf-8", errors="replace")
+    lines = text.splitlines()
+    if lines:
+        return lines[-1]   # dernière ligne reçue
+    return last_line
+ 
+
+
+def Move_lineaire(LastMessage):
+
+
+    global directive, turn
+    turn = 0
+    Parts = [None]
+    MemoryMessage = None
+    if LastMessage == "DoneJoint":
+           
+        directive = "Lineaire"
+
+
+        bras_robot.Calculate(1, 0.0, 0.0, 0.0, 0)
+
+
+        J1 = bras_robot.angles[0]
+        J2 = bras_robot.angles[1]
+        J3 = bras_robot.angles[2]
+
+
+        bras_robot.Calculate(2, 0.0, 0.0, 0.0, 0)
+
+
+        PickJ1 = bras_robot.angles[0]
+        PickJ2 = bras_robot.angles[1]
+        PickJ3 = bras_robot.angles[2]
+
+
+        bras_robot.Calculate(0, J1, J2, J3, 0)
+
+
+        V1 = bras_robot.vitesse[0]
+        V2 = bras_robot.vitesse[1]
+        V3 = bras_robot.vitesse[2]
+
+
+        envoyer_angles(ser, PickJ1, V1, -PickJ2, V2, -PickJ3, V3)
+
+
+   
+        while Parts[0] != "Doneline":
+            while MemoryMessage == None:
+                MemoryMessage = lire_latest_ligne_complete(ser)
+
+
+                if MemoryMessage != None:
+                    Parts = MemoryMessage.split()
+                    if len(Parts) != 4:
+                        MemoryMessage = None
+                        continue
+
+
+            bras_robot.Calculate(0, float(Parts[1]), float(Parts[2]), float(Parts[3]), 0)
+
+
+            V1 = bras_robot.vitesse[0]
+            V2 = bras_robot.vitesse[1]
+            V3 = bras_robot.vitesse[2]
+
+
+            envoyer_angles(ser, PickJ1, V1, -PickJ2, V2, -PickJ3, V3)
+
+
+            MemoryMessage = None
+
+def Move_ReverseLineaire(LastMessage):
+ 
+    global directive, turn
+    turn = 1
+    Parts = [None]
+    MemoryMessage = None
+    if LastMessage == "DoneLine":
+           
+        directive = "LineaireReverse"
+ 
+        bras_robot.Calculate(2, 0.0, 0.0, 0.0, 0)
+ 
+        J1 = bras_robot.angles[0]
+        J2 = bras_robot.angles[1]
+        J3 = bras_robot.angles[2]
+ 
+        bras_robot.Calculate(1, 0.0, 0.0, 0.0, 0)
+ 
+        ReachJ1 = bras_robot.angles[0]
+        ReachJ2 = bras_robot.angles[1]
+        ReachJ3 = bras_robot.angles[2]
+ 
+        bras_robot.Calculate(0, J1, J2, J3, turn)
+ 
+        V1 = bras_robot.vitesse[0]
+        V2 = bras_robot.vitesse[1]
+        V3 = bras_robot.vitesse[2]
+ 
+        envoyer_angles(ser, ReachJ1, V1, -ReachJ2, V2, -ReachJ3, V3)
+ 
+
+        while Parts[0] != "DoneLineReverse":
+            while MemoryMessage == None:
+                MemoryMessage = lire_latest_ligne_complete(ser)
+ 
+                if MemoryMessage != None:
+                    Parts = MemoryMessage.split()
+                    if len(Parts) != 4:
+                        MemoryMessage = None
+                        continue
+ 
+            bras_robot.Calculate(0, float(Parts[1]), float(Parts[2]), float(Parts[3]), turn)
+ 
+            V1 = bras_robot.vitesse[0]
+            V2 = bras_robot.vitesse[1]
+            V3 = bras_robot.vitesse[2]
+ 
+            envoyer_angles(ser, ReachJ1, V1, -ReachJ2, V2, -ReachJ3, V3)
+ 
+            MemoryMessage = None
 
 # MAIN
 
 
-COULEUR_MAP = {"rouge": Rouge, "bleu": Bleu, "jaune": Jaune} #à définir
+COULEUR_MAP = {"rouge": rouge, "bleu": bleu, "jaune": jaune} #à définir
 
 ser = connect_serial()
 if ser is None:
@@ -156,6 +314,7 @@ fA1 = fA2 = fA3 = 0.0
 
 try:
     while True:
+
         # 1. Aller à la position scan
         print("\n--- Position scan ---")
         fA1, fA2, fA3, _ = aller_a(ser, X_SCAN, Y_SCAN, Z_SCAN, fA1, fA2, fA3)
@@ -166,14 +325,16 @@ try:
         points_bruts = detecter_pilules()
 
         # TODO : adapter selon dict camera
+        
         points = []
         for p in points_bruts["pilules"]:
             points.append((
                 p["x"],
                 p["y"],
                 p["angle"],
-                COULEUR_MAP[p["couleur"]]
+                p["couleur"]
             ))
+
 
         if not points:
             print("Aucune pilule détectée")
@@ -195,6 +356,7 @@ try:
             fA1, fA2, fA3 = executer_point(ser, pt, fA1, fA2, fA3)
 
         time.sleep(1)
+        
 
 except KeyboardInterrupt:
     print("\nArrêt demandé.")
