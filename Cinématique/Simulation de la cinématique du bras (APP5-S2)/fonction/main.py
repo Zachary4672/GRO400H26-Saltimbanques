@@ -4,7 +4,7 @@ import donnees
 import bras_robot
 from pick_and_place import generate_trajectory, Rouge, Bleu, Jaune
 
-PORT  = "/dev/ttyACM0"
+PORT  = "COM9"
 BAUD  = 115200
 
 

@@ -58,6 +58,8 @@ const uint8_t Joint_1 = 2;
 const uint8_t Joint_2 = 1;
 const uint8_t Joint_3 = 3;
 
+const byte buttonPin = 2;
+
 // variable global pour set la vitesse en unité dynamixel et la position en deg
 float deg1 = 0;
 float deg2 = 0;
@@ -67,6 +69,7 @@ int v2 = 15;
 int v3 = 15;
 // variable selon ou est le moteur pour empècher le déplacement du mauvais côter
 bool lineaire = 0;
+bool interuption = 0;
 
 const float DXL_PROTOCOL_VERSION = 2.0;
 
@@ -74,6 +77,8 @@ Dynamixel2Arduino dxl(DXL_SERIAL, DXL_DIR_PIN);
 
 //This namespace is required to use Control table item names
 using namespace ControlTableItem;
+
+void monInterruption();
 
 void get_new_velo(){
   String msg = DEBUG_SERIAL.readStringUntil('\n');
@@ -139,8 +144,8 @@ void Set_target_angle(){
   dxl.setGoalPosition(Joint_2, deg2, UNIT_DEGREE);
   dxl.setGoalPosition(Joint_3, deg3, UNIT_DEGREE);
   
-  //vérifie quand les 3 moteurs ont atteint leurs positions finale 
-  while (abs(deg1 - position1) > 4.0 || abs(deg2 - position2) > 4.0 || abs(deg3 - position3)> 4.0)
+  //vérifie quand les 3 moteurs ont atteint leurs positions finale et répète la boucle jusqu'à ce que la contrainte soit respecté ou que le bouton d'urgence soit pas appuyé
+  while ((abs(deg1 - position1) > 4.0 || abs(deg2 - position2) > 4.0 || abs(deg3 - position3)> 4.0) && !interuption)
   {
     position1 = dxl.getPresentPosition(Joint_1, UNIT_DEGREE);
     position2 = dxl.getPresentPosition(Joint_2, UNIT_DEGREE);
@@ -156,163 +161,6 @@ void Set_target_angle(){
     }
   }
 }
-
-/*void lecture(){
-  float a1, a2, a3;
-  String msg = DEBUG_SERIAL.readStringUntil('\n');
-  if(msg.startsWith("#Joint,")){
-    lineaire = false;
-    int commaIndex = msg.indexOf(',');
-    int zigIndex = msg.indexOf('~');
-    int spaceIndex = msg.indexOf(' ');
-    int starIndex = msg.indexOf('*');
-
-    if (commaIndex != -1 && starIndex != -1)
-    {
-      String value_A1 = msg.substring(commaIndex + 1, zigIndex);
-      String value_A2 = msg.substring(zigIndex + 1, spaceIndex);
-      String value_A3 = msg.substring(spaceIndex + 1, starIndex);
-      a1 = value_A1.toFloat();
-      a2 = value_A2.toFloat();
-      a3 = value_A3.toFloat();
-      dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_1, 15);
-      dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_2, 15);
-      dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_3, 15);
-
-      // ici tu utilises a1 a2 a3
-      deg1 = ((a1 * 180.0) / PI)+45;
-      deg2 = ((a2 * 180.0) / PI);
-      if(home){
-          deg3 = ((a3 * 180.0) / PI) + 360;
-        }
-      else{
-        deg3 = ((a3 * 180.0) / PI);
-      }     
-    }
-  }
-  if(msg.startsWith("#Lineaire,")){
-    lineaire = true;
-    line_fin = true;
-    //#Lineaire,deg1~V1 deg2_V2-deg3
-    int commaIndex = msg.indexOf(',');
-    int zigIndex = msg.indexOf('~');
-    int spaceIndex = msg.indexOf(' ');
-    int UnderIndex = msg.indexOf('_');
-    int hyperIndex = msg.indexOf('&');
-    int exclaIndex = msg.indexOf('!');
-    int starIndex = msg.indexOf('*');
-    
-    if (commaIndex != -1 && starIndex != -1)
-    {
-      String value_A1 = msg.substring(commaIndex + 1, zigIndex);
-      String value_V1 = msg.substring(zigIndex + 1, spaceIndex);
-      String value_A2 = msg.substring(spaceIndex + 1, UnderIndex);
-      String value_V2 = msg.substring(UnderIndex + 1, hyperIndex);
-      String value_A3 = msg.substring(hyperIndex + 1, exclaIndex);
-      String value_V3 = msg.substring(exclaIndex + 1, starIndex);
-
-      a1 = value_A1.toFloat();
-      a2 = value_A2.toFloat();
-      a3 = value_A3.toFloat();
-
-      v1 = abs(value_V1.toFloat()*9.549/0.229);
-      v2 = abs(value_V2.toFloat()*9.549/0.229);
-      v3 = abs(value_V3.toFloat()*9.549/0.229);
-      if (v1==0)
-      {
-        v1 = 1;
-      }
-      if (v2==0)
-      {
-        v2 = 1;
-      }
-      if (v3==0)
-      {
-        v3 = 1;
-      }
-      dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_1, v1);
-      dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_2, v2);
-      dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_3, v3);
-      // ici tu utilises a1 a2 a3
-      deg1 = ((a1 * 180.0) / PI)+45;
-      deg2 = ((a2 * 180.0) / PI);
-      if(home){
-          deg3 = ((a3 * 180.0) / PI) + 360;
-        }
-      else{
-        deg3 = ((a3 * 180.0) / PI);
-      }   
-    }
-  }
-  if(msg.startsWith("#LineaireReverse,")){
-    lineaire = true;
-    line_fin = false;
-    //#Lineaire,deg1~V1 deg2_V2-deg3
-    int commaIndex = msg.indexOf(',');
-    int zigIndex = msg.indexOf('~');
-    int spaceIndex = msg.indexOf(' ');
-    int UnderIndex = msg.indexOf('_');
-    int hyperIndex = msg.indexOf('&');
-    int exclaIndex = msg.indexOf('!');
-    int starIndex = msg.indexOf('*');
-    
-    if (commaIndex != -1 && starIndex != -1)
-    {
-      String value_A1 = msg.substring(commaIndex + 1, zigIndex);
-      String value_V1 = msg.substring(zigIndex + 1, spaceIndex);
-      String value_A2 = msg.substring(spaceIndex + 1, UnderIndex);
-      String value_V2 = msg.substring(UnderIndex + 1, hyperIndex);
-      String value_A3 = msg.substring(hyperIndex + 1, exclaIndex);
-      String value_V3 = msg.substring(exclaIndex + 1, starIndex);
-
-      a1 = value_A1.toFloat();
-      a2 = value_A2.toFloat();
-      a3 = value_A3.toFloat();
-
-      v1 = abs(value_V1.toFloat()*9.549/0.229);
-      v2 = abs(value_V2.toFloat()*9.549/0.229);
-      v3 = abs(value_V3.toFloat()*9.549/0.229);
-      if (v1==0)
-      {
-        v1 = 1;
-      }
-      if (v2==0)
-      {
-        v2 = 1;
-      }
-      if (v3==0)
-      {
-        v3 = 1;
-      }
-      dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_1, v1);
-      dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_2, v2);
-      dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_3, v3);
-      // ici tu utilises a1 a2 a3
-      deg1 = ((a1 * 180.0) / PI)+45;
-      deg2 = ((a2 * 180.0) / PI);
-      if(home){ 
-          deg3 = ((a3 * 180.0) / PI) + 360;
-        }
-      else{
-        deg3 = ((a3 * 180.0) / PI);
-      }   
-    }
-    float position1 = dxl.getPresentPosition(Joint_1, UNIT_DEGREE);
-    float position2 = dxl.getPresentPosition(Joint_2, UNIT_DEGREE);
-    float position3 = dxl.getPresentPosition(Joint_3, UNIT_DEGREE);
-    if (home)
-    {
-      String mess = "angle "+String((position1-45)*DEG_TO_RAD)+" "+String((position2)*-DEG_TO_RAD)+" "+String((position3-360)*-DEG_TO_RAD);
-      DEBUG_SERIAL.println(mess);
-      //DEBUG_SERIAL.println((position3-360)*DEG_TO_RAD); 
-    }
-    else{
-      String mess = "angle "+String((position1-45)*DEG_TO_RAD)+" "+String((position2)*-DEG_TO_RAD)+" "+String((position3)*-DEG_TO_RAD);
-      DEBUG_SERIAL.println(mess);
-      //DEBUG_SERIAL.println((position3)*DEG_TO_RAD); a
-    }
-  }
-}*/
 
 void setup() {
   // put your setup code here, to run once:
@@ -388,6 +236,18 @@ void setup() {
   DEBUG_SERIAL.print("Last error code: ");
   DEBUG_SERIAL.println(dxl.getLastLibErrCode());
 
+  while (dxl.getPresentPosition(Joint_1,UNIT_DEGREE)>=225)
+  {
+    dxl.torqueOff(Joint_1);
+    if(dxl.getPresentPosition(Joint_1,UNIT_DEGREE)<=0)
+    {
+      dxl.reboot(Joint_1);
+      dxl.torqueOff(Joint_1);
+      dxl.setOperatingMode(Joint_1, OP_EXTENDED_POSITION);
+      dxl.torqueOn(Joint_1);
+      dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_1, 15);
+    }
+  }
   dxl.setGoalPosition(Joint_1, 45, UNIT_DEGREE);
 
   while (dxl.getPresentPosition(Joint_2,UNIT_DEGREE)>=270)
@@ -402,6 +262,7 @@ void setup() {
       dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_2, 15);
     }
   }
+  
   dxl.setGoalPosition(Joint_2, 70, UNIT_DEGREE);
 
   while (dxl.getPresentPosition(Joint_3,UNIT_DEGREE)>=0 && dxl.getPresentPosition(Joint_3,UNIT_DEGREE)<=180)
@@ -419,11 +280,15 @@ void setup() {
   dxl.setGoalPosition(Joint_3, 300, UNIT_DEGREE);
   Poignet.attach(servoPoignet);
   Pince.attach(servoPince);
+
+  pinMode(buttonPin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(buttonPin), monInterruption, FALLING);
   delay(2000);
 }
 
 void loop() {
   float position1, position2, position3;
+  interuption = 0;
   
   //Attend que le code Python a envoyé des données
   if (DEBUG_SERIAL.available()) {
@@ -465,15 +330,8 @@ void loop() {
         deg2 = ((a2 * 180.0) / PI);
         deg3 = ((a3 * 180.0) / PI) + 360;
 
-        //appel la fonction pour que le robot aille à la position voulu
-        if (deg2<30)
-        {
-          DEBUG_SERIAL.println("ERRUER: le moteur 2 ne peut pas aller en dessous de 30 degrés");
-        }
-        else{
-          Set_target_angle();
-        }
-
+        //commence le mouvement en joint vers la position voulu
+        Set_target_angle();
         //renvoie la position actuel des moteur en RAD au code de cinématique et lui dit que le mouvement est fini
         position1 = dxl.getPresentPosition(Joint_1, UNIT_DEGREE);
         position2 = dxl.getPresentPosition(Joint_2, UNIT_DEGREE);
@@ -548,14 +406,7 @@ void loop() {
         Poignet.write(a4);
 
         //commence le mouvement linéaire vers la position voulu
-        if (deg2<30)
-        {
-          DEBUG_SERIAL.println("ERREUR: le moteur 2 ne peut pas aller en dessous de 30 degrés");
-        }
-        else{
-          Set_target_angle();
-        }
-
+        Set_target_angle();
         //renvoie la position actuel des moteur en RAD au code de cinématique et lui dit que le mouvement est fini
         position1 = dxl.getPresentPosition(Joint_1, UNIT_DEGREE);
         position2 = dxl.getPresentPosition(Joint_2, UNIT_DEGREE);
@@ -580,6 +431,7 @@ void loop() {
       //Vérifie si le message est valide en vérifiant s'il y a pas d'erreur de position des symboles et si c'est le cas alors on peut extraire les valeurs du message
       if (commaIndex != -1 && starIndex != -1)
       {
+        //Mets les valeurs des angles selon leurs position dans le message
         String value_A1 = msg.substring(commaIndex + 1, zigIndex);
         String value_V1 = msg.substring(zigIndex + 1, spaceIndex);
         String value_A2 = msg.substring(spaceIndex + 1, UnderIndex);
@@ -591,10 +443,12 @@ void loop() {
         a1 = value_A1.toFloat();
         a2 = value_A2.toFloat();
         a3 = value_A3.toFloat();
-
+        
+        //mets les valeurs des vitesses dans des variable temporaire
         v1 = abs(value_V1.toFloat()*9.549/0.229);
         v2 = abs(value_V2.toFloat()*9.549/0.229);
         v3 = abs(value_V3.toFloat()*9.549/0.229);
+        //confirme que la vitesse n'est pas à 0 pour éviter que le moteur aille à pleine vitesse
         if (v1==0)
         {
           v1 = 1;
@@ -607,36 +461,41 @@ void loop() {
         {
           v3 = 1;
         }
+        // redéfinit la vitesse de chaque moteur
         dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_1, v1);
         dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_2, v2);
         dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_3, v3);
-        // ici tu utilises a1 a2 a3
+
+        // transformé les angles de radian en degré et les redéfinit pour les utilisé dans set_target_angle
         deg1 = ((a1 * 180.0) / PI) + 45;
         deg2 = ((a2 * 180.0) / PI);
         deg3 = ((a3 * 180.0) / PI) + 360;
 
-        if (deg2<30)
-        {
-          DEBUG_SERIAL.println("ERREUR: le moteur 2 ne peut pas aller en dessous de 30 degrés");
-        }
-        else{
-          Set_target_angle();
-        }
-
+        //commence le mouvement linéaire vers la position voulu
+        Set_target_angle();
+        //repositionne le poignet à 90 degré une fois le mouvement linéaire inverse fini
         Poignet.write(90);
+        //Renvoie un message disant que le mouvement est fini
         DEBUG_SERIAL.println("DoneLineReverse");
       }
     }
+    //Regardes si le message commence par #Pince pour savoir s'il doit fermer ou ouvrir la pince 
     if (msg.startsWith("#Pince,"))
     {
+      //Index chaque symbole utilisé pour séparer les différentes valeurs dans le message envoyé par python
       int commaIndex = msg.indexOf(',');
       int starIndex = msg.indexOf('*');
-
+      
+      //Vérifie si le message est valide en vérifiant s'il y a pas d'erreur de position des symboles et si c'est le cas alors on peut extraire les valeurs du message
       if (commaIndex != -1 && starIndex != -1){
+
+        //Mets les valeurs des angles selon leurs position dans le message
         String value_A1 = msg.substring(commaIndex + 1, starIndex);
 
+        //transfoirme la valeur de string en int pour savoir si on doit ouvrir ou fermer la pince
         int closing = value_A1.toInt();
 
+        //si la valeur est à 1 alors on ferme la pince sinon on l'ouvre
         if (closing == 1)
         {
           Pince.write(fermer);
@@ -645,6 +504,48 @@ void loop() {
         else{
           Pince.write(ouvert);
         }
+      }
+    }
+  }
+}
+
+void monInterruption(){
+  // boutton urgence pour arreter le mouvement du robot
+  float position1, position2, position3;
+  bool erreur = 1;
+  //reste dans la boucle temops que le robot n'est pas prêt à bouger à nouveau
+  while(erreur == 1){
+    position1 = dxl.getPresentPosition(Joint_1, UNIT_DEGREE);
+    position2 = dxl.getPresentPosition(Joint_2, UNIT_DEGREE);
+    position3 = dxl.getPresentPosition(Joint_3, UNIT_DEGREE);
+    dxl.setGoalPosition(Joint_3, position1, UNIT_DEGREE);
+    dxl.setGoalPosition(Joint_3, position2, UNIT_DEGREE);
+    dxl.setGoalPosition(Joint_3, position3, UNIT_DEGREE);
+    Pince.write(ouvert);
+
+    if(DEBUG_SERIAL.available()){
+      String msg = DEBUG_SERIAL.readStringUntil('\n');
+      //attend le message de reset pour éteindre le torque des moteur afin de pouvoir les bouger à la main
+      if(msg.startsWith("#Reset"))
+      {
+        dxl.torqueOff(Joint_1);
+        dxl.torqueOff(Joint_2);
+        dxl.torqueOff(Joint_3);
+      }
+      //une fois que le robot est bien positionner attend le message #Good pour réactiver c'est moteur
+      if(msg.startsWith("#Good"))
+      {
+        position1 = dxl.getPresentPosition(Joint_1, UNIT_DEGREE);
+        position2 = dxl.getPresentPosition(Joint_2, UNIT_DEGREE);
+        position3 = dxl.getPresentPosition(Joint_3, UNIT_DEGREE);
+        dxl.setGoalPosition(Joint_3, position1, UNIT_DEGREE);
+        dxl.setGoalPosition(Joint_3, position2, UNIT_DEGREE);
+        dxl.setGoalPosition(Joint_3, position3, UNIT_DEGREE);
+        dxl.torqueOn(Joint_1);
+        dxl.torqueOn(Joint_2);
+        dxl.torqueOn(Joint_3);
+        interuption = 1;
+        erreur = 0;
       }
     }
   }
