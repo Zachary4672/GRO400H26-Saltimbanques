@@ -79,15 +79,17 @@ def image_process(frame_queue):
 
             hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
 
-
             # exemple pour couleurs vives (à ajuster)
             lower = np.array([0, 80, 80])
             upper = np.array([180, 255, 255])
-
             tresh = cv2.inRange(hsv, lower, upper)
+
+            # gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            # _, tresh = cv2.threshold(gray, 60, 255, cv2.THRESH_BINARY)
             kernel = np.ones((5, 5), np.uint8)
             tresh = cv2.morphologyEx(tresh, cv2.MORPH_CLOSE, kernel)
             tresh = cv2.morphologyEx(tresh, cv2.MORPH_OPEN, kernel)
+
             #Masque pour couleur
             mask = tresh > 0
             pixels = hsv[mask]
@@ -132,19 +134,27 @@ def image_process(frame_queue):
             if len(cnt) < 5:
                 continue
 
-            ellipse = cv2.fitEllipse(cnt)
-            (cx_roi, cy_roi), (MA, ma), angle = ellipse
+            # ellipse = cv2.fitEllipse(cnt)
+            # (cx_roi, cy_roi), (MA, ma), angle = ellipse
+            
+            # Toujours prendre le GRAND axe
+            # if MA < ma:
+            #     angle += 90
 
-            cx = int(cx_roi + x1)
-            cy = int(cy_roi + y1)
+            # PCA pour orientation
+            data_pts = cnt.reshape(-1, 2).astype(np.float32)
+            mean, eigenvectors = cv2.PCACompute(data_pts, mean=None)
+            vx, vy = eigenvectors[0]
 
-            angle_rad = m.radians(angle)
-            vx = m.cos(angle_rad)
-            vy = m.sin(angle_rad)
+            angle = m.degrees(m.atan2(-vy, vx))
+
+
+            # cx = int(cx_roi + x1)
+            # cy = int(cy_roi + y1)
 
             length = 50
             dx = int(length * vx)
-            dy = int(length * vy)
+            dy = int(length * (-vy))
 
 
             M = cv2.moments(cnt)
@@ -174,22 +184,23 @@ def image_process(frame_queue):
             dx = int(length * vx)
             dy = int(length * vy)
 
-
-
-
             # lissage
-            if prev_angle is not None:
-                diff = angle - prev_angle
+            # if prev_angle is not None:
+                # diff = angle - prev_angle
+                # if diff > 90:
+                #     angle -= 360
+                # elif diff < -90:
+                #     angle += 360
+                # alpha = 0.15
+                # angle = alpha * angle + (1 - alpha) * prev_angle
 
-                if diff > 90:
-                    angle -= 180
-                elif diff < -90:
-                    angle += 180
-
-                alpha = 0.15
-                angle = alpha * angle + (1 - alpha) * prev_angle
-
+            angle = ((angle + 360) % 360)
             prev_angle = angle
+            
+            #recalul vecteur
+            # angle_rad = m.radians(angle)
+            # vx = m.cos(angle_rad)
+            # vy = - m.sin(angle_rad)
 
             #centre JB
 
@@ -201,7 +212,9 @@ def image_process(frame_queue):
                 'color': color # remplacer par couleur éventuellement
             })
             cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
-            # cv2.line(frame, (int(cx), int(cy)), (int(cx+dx), int(cy+dy)), (255, 0, 0), 2)
+            cv2.line(frame, (int(cx), int(cy)), (int(cx+dx), int(cy+dy)), (255, 0, 0), 2)
+            # ligne angle 0°
+            cv2.line(frame, (cx, cy), (cx + 50, cy), (255, 0, 0), 2)
 
             cv2.putText(frame, f"{cx:.0f},{cy:.0f}, angle : {angle:.1f}, couleur : {color}, mean_h :{mean_h:.0f}, mean_s :{mean_s:.0f}", (int(cx + dx), int(cy + dy)),
             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
@@ -213,7 +226,7 @@ def image_process(frame_queue):
             except q.Empty:
                 pass
         pos_queue.put(pos_JB)
-        print(f"Position JB {pos_JB}")
+        # print(f"Position JB {pos_JB}")
         annotated = results[0].plot()
 
         if disp_queue.full():
@@ -223,6 +236,7 @@ def image_process(frame_queue):
                 pass
 
         disp_queue.put(frame)
+        
         run_detection.clear()
 
 
@@ -235,10 +249,12 @@ th.Thread(target=image_process, args=(frame_queue,), daemon=True).start()
 while True:
 
     if cv2.waitKey(1) == ord('d'):  # exemple touche clavier
-        run_detection.set()
-        # if not pos_queue.empty():
-        #     pos_JB = pos_queue.get()
-        #     print(f"Position JB {pos_JB}")
+        for _ in range(5):  # nombre de frames
+            run_detection.set()
+            time.sleep(0.05)
+        if not pos_queue.empty():
+            pos_JB = pos_queue.get()
+            print(f"Position JB {pos_JB}")
     if not disp_queue.empty():
         frame = disp_queue.get()
         cv2.imshow("YOLO", frame)
