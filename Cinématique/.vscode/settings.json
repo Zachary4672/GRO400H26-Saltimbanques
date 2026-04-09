@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./Simulation de la cinématique du bras (APP5-S2)/fonction"
+    ]
+}

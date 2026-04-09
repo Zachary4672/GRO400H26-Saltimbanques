@@ -1,0 +1,8 @@
+CorrelationId: 07bc7381-6a5b-4386-9567-3da74d81c150
+UTC DateTime: 02/03/2026 15:02:36
+
+The following files/folders have not been downloaded
+0. ProjetS4/Simulation de la cin?matique du bras (APP5-S2)/venv/Lib/site-packages/numpy-2.2.3-cp311-cp311-win_amd64.whl
+1. ProjetS4/Simulation de la cin?matique du bras (APP5-S2)/venv/Lib/site-packages/pip-22.3.1.virtualenv
+2. ProjetS4/Simulation de la cin?matique du bras (APP5-S2)/venv/Lib/site-packages/setuptools-65.5.1.virtualenv
+3. ProjetS4/Simulation de la cin?matique du bras (APP5-S2)/venv/Lib/site-packages/wheel-0.38.4.virtualenv
