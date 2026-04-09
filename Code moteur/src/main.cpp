@@ -9,7 +9,7 @@
 #include <Dynamixel2Arduino.h>
 #include <Servo.h>
 //L'angle envoyé au moteurs pour ouvrir et fermer la pince
-#define ouvert 20
+#define ouvert 30
 #define fermer 0
 
 // Please modify it to suit your hardware.
@@ -280,7 +280,8 @@ void setup() {
   dxl.setGoalPosition(Joint_3, 300, UNIT_DEGREE);
   Poignet.attach(servoPoignet);
   Pince.attach(servoPince);
-
+  Pince.write(ouvert);
+  
   pinMode(buttonPin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(buttonPin), monInterruption, FALLING);
   delay(2000);
