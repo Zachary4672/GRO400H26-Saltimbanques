@@ -84,8 +84,7 @@ def image_process(frame_queue):
             upper = np.array([180, 255, 255])
             tresh = cv2.inRange(hsv, lower, upper)
 
-            # gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-            # _, tresh = cv2.threshold(gray, 60, 255, cv2.THRESH_BINARY)
+
             kernel = np.ones((5, 5), np.uint8)
             tresh = cv2.morphologyEx(tresh, cv2.MORPH_CLOSE, kernel)
             tresh = cv2.morphologyEx(tresh, cv2.MORPH_OPEN, kernel)
@@ -134,12 +133,7 @@ def image_process(frame_queue):
             if len(cnt) < 5:
                 continue
 
-            # ellipse = cv2.fitEllipse(cnt)
-            # (cx_roi, cy_roi), (MA, ma), angle = ellipse
-            
-            # Toujours prendre le GRAND axe
-            # if MA < ma:
-            #     angle += 90
+
 
             # PCA pour orientation
             data_pts = cnt.reshape(-1, 2).astype(np.float32)
@@ -149,8 +143,7 @@ def image_process(frame_queue):
             angle = m.degrees(m.atan2(-vy, vx))
 
 
-            # cx = int(cx_roi + x1)
-            # cy = int(cy_roi + y1)
+
 
             length = 50
             dx = int(length * vx)
@@ -184,23 +177,12 @@ def image_process(frame_queue):
             dx = int(length * vx)
             dy = int(length * vy)
 
-            # lissage
-            # if prev_angle is not None:
-                # diff = angle - prev_angle
-                # if diff > 90:
-                #     angle -= 360
-                # elif diff < -90:
-                #     angle += 360
-                # alpha = 0.15
-                # angle = alpha * angle + (1 - alpha) * prev_angle
+
 
             angle = ((angle + 360) % 360)
             prev_angle = angle
             
-            #recalul vecteur
-            # angle_rad = m.radians(angle)
-            # vx = m.cos(angle_rad)
-            # vy = - m.sin(angle_rad)
+
 
             #centre JB
 
