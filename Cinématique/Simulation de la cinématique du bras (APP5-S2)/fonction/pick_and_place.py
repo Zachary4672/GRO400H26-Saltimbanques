@@ -107,7 +107,7 @@ def compute_angles(traj):
         x, y, z, angle, type_mvt, pince, couleur = pt
 
         # Mise à jour cible
-        donnees.Donnees.x_cible     = x
+        donnees.Donnees.x_cible     = x #A CHANGER POUR LE CALL DU WRITE JSON
         donnees.Donnees.y_cible     = y
         donnees.Donnees.z_cible     = z
         donnees.Donnees.angle_cible = angle
