@@ -1,0 +1,40 @@
+import numpy as np
+from ultralytics import YOLO
+import cv2
+import math as m
+import threading as th
+import queue as q
+import time
+from Camera import main_video as mv
+
+#Initialisation de la caméra et des threads
+
+mv.init_camera()
+th.Thread(target=mv.capture_frame, args=(mv.cap,mv.frame_queue), daemon=True).start()
+th.Thread(target=mv.image_process, args=(mv.frame_queue,), daemon=True).start()
+
+#Main
+while True:
+
+    if cv2.waitKey(1) == ord('d'):  # exemple touche clavier
+        for _ in range(5):  # nombre de frames
+            mv.run_detection.set()
+            time.sleep(0.05)
+        if not mv.pos_queue.empty():
+            pos_JB = mv.pos_queue.get()
+            print(f"Position JB {pos_JB}")
+    if not mv.disp_queue.empty():
+        frame = mv.disp_queue.get()
+        cv2.imshow("YOLO", frame)
+    if mv.disp_queue.empty() and not mv.frame_queue.empty():
+        frame = mv.frame_queue.get()
+        cv2.imshow("No detection", frame)
+    if cv2.waitKey(1) == 27:
+        break
+    key = cv2.waitKey(1) & 0xFF
+
+
+
+mv.cap.release()
+mv.cv2.destroyAllWindows()
+
