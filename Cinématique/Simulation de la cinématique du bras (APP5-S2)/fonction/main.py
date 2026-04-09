@@ -206,7 +206,7 @@ def executer_point(ser, pt, fA1, fA2, fA3):
 
     #if result:
         #return result[0], result[1], result[2]
-    return j1, j2, j3
+    return
 
 
 
