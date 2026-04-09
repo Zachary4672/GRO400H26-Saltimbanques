@@ -68,7 +68,7 @@ def generate_pick(pil):
     couleur = normalize_couleur(couleur)
 
     return [
-        [x, y, z_pick + hauteur_boite, angle, Joint, Fermee, couleur],
+        [x, y, z_pick, angle, Joint, Fermee, couleur],
     ]
 
 # -----------------------------

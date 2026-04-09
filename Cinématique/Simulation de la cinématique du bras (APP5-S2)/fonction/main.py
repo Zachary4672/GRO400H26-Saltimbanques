@@ -1,11 +1,13 @@
 import serial
 import time
+from pathlib import Path
 import donnees
 import bras_robot
+import affichage
 import json
 from pick_and_place import generate_trajectory, rouge, bleu, jaune
 
-PORT  = "/dev/ttyACM0"  # à adapter selon votre système
+PORT  = "COM6"  # à adapter selon votre système
 BAUD  = 115200
 
 
@@ -34,13 +36,18 @@ def connect_serial():
     
 
 def writingJSON(x_pos, y_pos, z_pos):
-    filename = "donnees.json"
+
+    filename = Path("donnees.json")
+    
+    if filename.exists():
+        filename.unlink()  # Supprimer le fichier existant
+
     data = {
         "x" : x_pos,
         "y" : y_pos,
         "z" : z_pos
     }
-    with open(filename, "w", encoding="utf-8") as f:
+    with open(filename, "w") as f:
         json.dump(data, f, indent=4)
     
 
@@ -144,7 +151,8 @@ def aller_a(ser, x, y, z, fA1=0.0, fA2=0.0, fA3=0.0):
                     continue
     result = Parts
 
-    print(f"  Position atteinte : j1={result[0]:.3f} j2={result[1]:.3f} j3={result[2]:.3f}")
+
+    #print(f"  Position atteinte : j1={result[1]:.3f} j2={result[2]:.3f} j3={result[3]:.3f}")
     return result[0], result[1], result[2], angle
 
 def detecter_pilules():
@@ -154,7 +162,7 @@ def detecter_pilules():
         "pilules": [
             {"x": 0.2, "y": 0.01, "angle": 0, "couleur": "rouge"},
             {"x": 0.2, "y": 0.0, "angle": 45, "couleur": "bleu"},
-            {"x": 0.2, "y": -0.01, "angle": -30, "couleur": "jaune"},
+            {"x": 0.2, "y": -0.01, "angle": 30, "couleur": "jaune"},
         ]   
     }
 
@@ -183,13 +191,9 @@ def executer_point(ser, pt, fA1, fA2, fA3):
                     if len(Parts) != 4:
                         MemoryMessage = None
                         continue
-        
 
-    elif type_mvt == 1:     # Lineaire
         Move_lineaire("DoneJoint")
 
-    else:                   # Reverse
-        Move_ReverseLineaire("DoneLine")
 
     if pince == 1:
         print(f"  → FERMER pince")
@@ -204,8 +208,6 @@ def executer_point(ser, pt, fA1, fA2, fA3):
         time.sleep(0.8)
         Move_ReverseLineaire("DoneLine")
 
-    #if result:
-        #return result[0], result[1], result[2]
     return
 
 
@@ -315,14 +317,14 @@ def Move_ReverseLineaire(LastMessage):
                     if len(Parts) != 1:
                         MemoryMessage = None
                         continue
+            if len(Parts) == 4:
+                bras_robot.Calculate(0, float(Parts[1]), float(Parts[2]), float(Parts[3]), turn)
  
-            bras_robot.Calculate(0, float(Parts[1]), float(Parts[2]), float(Parts[3]), turn)
+                V1 = bras_robot.vitesse[0]
+                V2 = bras_robot.vitesse[1]
+                V3 = bras_robot.vitesse[2]
  
-            V1 = bras_robot.vitesse[0]
-            V2 = bras_robot.vitesse[1]
-            V3 = bras_robot.vitesse[2]
- 
-            envoyer_angles(ser, ReachJ1, V1, -ReachJ2, V2, -ReachJ3, V3, 0)
+                envoyer_angles(ser, ReachJ1, V1, -ReachJ2, V2, -ReachJ3, V3, 0)
  
             MemoryMessage = None
 

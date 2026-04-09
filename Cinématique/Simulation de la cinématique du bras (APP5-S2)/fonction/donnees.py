@@ -5,14 +5,14 @@ class Donnees:
     L0 = 0.046
     L1 = 0.155
     L2 = 0.175
-    L3 = 0.145725  # poignet -> bout effecteur
+    L3 = 0.13442  # poignet -> bout effecteur
     Lcam_y = 0.05
     Lcam_x = 0.05
     Lcam_z = 0
 
     h_boite = 0.086
-    z_pick = -h_boite
-    z_drop = h_boite + 0.05
+    z_pick = -0.086
+    z_drop = 0.02
 
     # position world de la base
     wx, wy, wz = 0.0, 0.0, 0.0
@@ -37,15 +37,15 @@ class Donnees:
     # "bas" = elbow-down, "haut" = elbow-up
     config_coude = "bas"
 
-    x_scan = 0.2
-    y_scan = 0.0
-    z_scan = 0.1
+    x_scan = -0.06
+    y_scan = -0.155
+    z_scan = -0.1
 
    # Position des pots (x,y)
 
-    x_r = 0.06
-    y_r = 0.148
+    x_r = 0.052
+    y_r = -0.148
     x_b = 0.00
-    y_b = 0.155
+    y_b = -0.155
     x_j = -0.06
-    y_j = 0.155
+    y_j = -0.155

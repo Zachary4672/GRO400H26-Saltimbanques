@@ -123,7 +123,7 @@ def fk_xyz(arrP_w0, L1, L2, L3, sens, j1, j2, j3):
     return x, y, z
  
 def Calculate(iState, fA1, fA2, fA3, turn):
-    global vitesse, p_ee_w, p_e1_w, p_e2_w, x_tool_w, angles, gangles
+    global vitesse, p_ee_w, p_e1_w, p_e2_w, x_tool_w, angles, gangles, p_w0
  
     x_cible, y_cible, z_cible = load_xyz()
     if iState == 1 or iState == 2 or iState == 0:
@@ -135,15 +135,14 @@ def Calculate(iState, fA1, fA2, fA3, turn):
     # -----------------------------
     # Base et cible
     # -----------------------------
-   
- 
+        z = z_cible + q
         arrP_w0 = np.array([[donnees.Donnees.wx],
                         [donnees.Donnees.wy],
                         [donnees.Donnees.wz]])
    
         p_ee_cible = np.array([[x_cible],
                             [y_cible],
-                            [z_cible + q]])
+                            [z]])
    
         L1, L2, L3 = donnees.Donnees.L1, donnees.Donnees.L2, donnees.Donnees.L3
         sens = donnees.Donnees.sens_outil

@@ -281,7 +281,7 @@ void setup() {
   Poignet.attach(servoPoignet);
   Pince.attach(servoPince);
   Pince.write(ouvert);
-  
+
   pinMode(buttonPin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(buttonPin), monInterruption, FALLING);
   delay(2000);
@@ -293,19 +293,23 @@ void loop() {
   
   //Attend que le code Python a envoyé des données
   if (DEBUG_SERIAL.available()) {
+
     //Valeurs pour inscrire les angles dans une variable local
     float a1, a2, a3, a4;
+    
     //enregistre le message envoyé par python dans un string jusqu'à ce qu'il rencontre la fin du message (\n)
     String msg = DEBUG_SERIAL.readStringUntil('\n');
+    
     // Si le message commence par #Joint donc le robot doit faire un mouvement en joint et rentre dans la boucle
     if(msg.startsWith("#Joint,")){
       lineaire = false; // définit que le robot bouge en joint
 
       // donne des valeurs d'index pour chaque symbole utilisé pour séparer les différentes valeurs dans le message envoyé par python
-      //le message = #Joint,deg1~deg2 deg3*
+      //le message = #Joint,deg1~deg2 deg3/deg4*
       int commaIndex = msg.indexOf(',');
       int zigIndex = msg.indexOf('~');
       int spaceIndex = msg.indexOf(' ');
+      int slashIndex = msg.indexOf('/');
       int starIndex = msg.indexOf('*');
 
       //Vérifie si le message est valide en vérifiant s'il y a pas d'erreur de position des symboles et si c'est le cas alors on peut extraire les valeurs du message
@@ -314,12 +318,14 @@ void loop() {
         //mets les valeurs des angles selon leurs position dans le message
         String value_A1 = msg.substring(commaIndex + 1, zigIndex);
         String value_A2 = msg.substring(zigIndex + 1, spaceIndex);
-        String value_A3 = msg.substring(spaceIndex + 1, starIndex);
+        String value_A3 = msg.substring(spaceIndex + 1, slashIndex);
+        String value_A4 = msg.substring(slashIndex + 1, starIndex);
 
         //mets les valeurs des angle dans des variable temporaire
         a1 = value_A1.toFloat();
         a2 = value_A2.toFloat();
         a3 = value_A3.toFloat();
+        a4 = value_A4.toFloat();
 
         //définit les vitesse de chaque moteur à 15 pour le mouvment en joint
         dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_1, 15);
@@ -333,6 +339,10 @@ void loop() {
 
         //commence le mouvement en joint vers la position voulu
         Set_target_angle();
+
+        //déplace le poignet avant de faire le déplacement linéaire pour que le poignet soit dans la bonne position pendant le déplacement linéaire
+        Poignet.write(a4);
+
         //renvoie la position actuel des moteur en RAD au code de cinématique et lui dit que le mouvement est fini
         position1 = dxl.getPresentPosition(Joint_1, UNIT_DEGREE);
         position2 = dxl.getPresentPosition(Joint_2, UNIT_DEGREE);
@@ -403,11 +413,9 @@ void loop() {
         deg2 = ((a2 * 180.0) / PI);
         deg3 = ((a3 * 180.0) / PI) + 360;
 
-        //déplace le poignet avant de faire le déplacement linéaire pour que le poignet soit dans la bonne position pendant le déplacement linéaire
-        Poignet.write(a4);
-
         //commence le mouvement linéaire vers la position voulu
         Set_target_angle();
+
         //renvoie la position actuel des moteur en RAD au code de cinématique et lui dit que le mouvement est fini
         position1 = dxl.getPresentPosition(Joint_1, UNIT_DEGREE);
         position2 = dxl.getPresentPosition(Joint_2, UNIT_DEGREE);
@@ -416,11 +424,12 @@ void loop() {
         DEBUG_SERIAL.println(mess);
       }
     }
+
     if(msg.startsWith("#LineaireReverse,")){
       lineaire = true;// Garde en mémoire que le robot bouge linéairement
 
       //Index chaque symbole utilisé pour séparer les différentes valeurs dans le message envoyé par python
-      //#Lineaire,deg1~V1 deg2_V2-deg3*
+      //#LineaireReverse,deg1~V1 deg2_V2-deg3*
       int commaIndex = msg.indexOf(',');
       int zigIndex = msg.indexOf('~');
       int spaceIndex = msg.indexOf(' ');
@@ -449,6 +458,7 @@ void loop() {
         v1 = abs(value_V1.toFloat()*9.549/0.229);
         v2 = abs(value_V2.toFloat()*9.549/0.229);
         v3 = abs(value_V3.toFloat()*9.549/0.229);
+
         //confirme que la vitesse n'est pas à 0 pour éviter que le moteur aille à pleine vitesse
         if (v1==0)
         {
@@ -462,6 +472,7 @@ void loop() {
         {
           v3 = 1;
         }
+
         // redéfinit la vitesse de chaque moteur
         dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_1, v1);
         dxl.writeControlTableItem(PROFILE_VELOCITY, Joint_2, v2);
@@ -474,8 +485,10 @@ void loop() {
 
         //commence le mouvement linéaire vers la position voulu
         Set_target_angle();
+
         //repositionne le poignet à 90 degré une fois le mouvement linéaire inverse fini
         Poignet.write(90);
+
         //Renvoie un message disant que le mouvement est fini
         DEBUG_SERIAL.println("DoneLineReverse");
       }
