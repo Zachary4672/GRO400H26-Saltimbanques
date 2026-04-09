@@ -158,6 +158,7 @@ def aller_a(ser, x, y, z, fA1=0.0, fA2=0.0, fA3=0.0):
 def detecter_pilules():
     # Simuler la détection de pilules
     # TODO : remplacer par la vraie détection caméra
+    
     return {
         "pilules": [
             {"x": 0.2, "y": 0.01, "angle": 0, "couleur": "rouge"},
