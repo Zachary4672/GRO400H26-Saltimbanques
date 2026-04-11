@@ -16,6 +16,8 @@ X_SCAN = donnees.Donnees.x_scan
 Y_SCAN = donnees.Donnees.y_scan
 Z_SCAN = donnees.Donnees.z_scan
 LastMessage = None
+StartRobot = False  #Variable utilisé par le HMI
+StopMoteur = False  #Variable utilisé par le HMI
 turn = 0
 directive = "Joint"
 
@@ -51,24 +53,6 @@ def writingJSON(x_pos, y_pos, z_pos):
         json.dump(data, f, indent=4)
     
 
-#def envoyer_joint(ser, j1, j2, j3, j4=0):
-    #msg = f"#Joint,{j1:.4f}~{j2:.4f} {j3:.4f} {j4:.4f}*\n"
-    #ser.write(msg.encode("utf-8"))
-
-
-#def envoyer_lineaire(ser, j1, v1, j2, v2, j3, v3, j4=0):
-   # msg = f"#Lineaire,{j1:.4f}~{v1:.4f} {j2:.4f}_{v2:.4f}&{j3:.4f}!{v3:.4f}*\n"
-   # ser.write(msg.encode("utf-8"))
-
-
-#def envoyer_reverse(ser, j1, v1, j2, v2, j3, v3, j4=0):
-    #msg = f"#LineaireReverse,{j1:.4f}~{v1:.4f} {j2:.4f}_{v2:.4f}&{j3:.4f}!{v3:.4f}*\n"
-    #ser.write(msg.encode("utf-8"))
-
-
-#def envoyer_pince(ser, fermer=True):
-    #msg = f"#Pince,1*\n" if fermer else f"#Pince,0*\n"
-    #ser.write(msg.encode("utf-8"))
 
 #Fonction: envoyer_angles(ser, a1, b1, a2, b2, a3, b3): Envoie des angles à l'arduino pour un prochain mouvement
 def envoyer_angles(ser, a1, b1, a2, b2, a3, b3, a4):
@@ -83,6 +67,10 @@ def envoyer_angles(ser, a1, b1, a2, b2, a3, b3, a4):
         message = f"#Pince,1*\n"
     elif directive == "Pince0":
         message = f"#Pince,0*\n"
+    elif directive == "StopMoteur":
+        message = f"#StopMoteur,1*\n"
+    elif directive == "StartMoteur":
+        message = f"#StopMoteur,0*\n"
     ser.write(message.encode("utf-8"))
 
 #Fonction: lire_responses permet de recevoir les informations du buffer "ser" et vérifier les réponses
@@ -102,27 +90,6 @@ def lire_latest_ligne_complete(ser, last_line = None):
     if lines:
         return lines[-1]   # dernière ligne reçue
     return last_line
-
-#def attendre_doneline(ser, timeout=15):
-    #debut = time.time()
-    #done_recu = False
-   # while time.time() - debut < timeout:
-       # ligne = ser.readline().decode("utf-8", errors="replace").strip()
-        #if not ligne:
-        #    continue
-        #if ligne.startswith("Working"):
-        #    continue
-        #if ligne.startswith("Doneline"):
-        #    done_recu = True
-        #    continue
-        #if ligne.startswith("Donejoint"):
-        #    done_recu = True
-        #    continue
-        #if done_recu:
-        #    parts = ligne.split()
-        #    if len(parts) >= 4:
-        #        return float(parts[1]), float(parts[2]), float(parts[3])
-    #return None
 
 
 # Aller à une position cartésienne (Joint)
@@ -151,8 +118,6 @@ def aller_a(ser, x, y, z, fA1=0.0, fA2=0.0, fA3=0.0):
                     continue
     result = Parts
 
-
-    #print(f"  Position atteinte : j1={result[1]:.3f} j2={result[2]:.3f} j3={result[3]:.3f}")
     return result[0], result[1], result[2], angle
 
 def detecter_pilules():
@@ -178,7 +143,8 @@ def executer_point(ser, pt, fA1, fA2, fA3):
     bras_robot.Calculate(1, fA1, fA2, fA3, 1)
     j1, j2, j3, j4 = bras_robot.angles
 
-    if type_mvt == 0:       # Joint
+    if type_mvt == 0:       
+        # Mouvement Joint
         directive = "Joint"
         envoyer_angles(ser, j1, 0, -j2, 0, -j3, 0, j4)
 
@@ -193,17 +159,18 @@ def executer_point(ser, pt, fA1, fA2, fA3):
                         MemoryMessage = None
                         continue
 
+        #Mouvement linéaire
         Move_lineaire("DoneJoint")
 
 
     if pince == 1:
-        print(f"  → FERMER pince")
+        #Fermer la pince
         directive = "Pince1"
         envoyer_angles(ser, 0,0,0,0,0,0,0)
         time.sleep(0.8)
         Move_ReverseLineaire("DoneLine")
     else:
-        print(f"  → OUVRIR pince")
+        #Ouvrir la pince
         directive = "Pince0"
         envoyer_angles(ser, 0,0,0,0,0,0,0)
         time.sleep(0.8)
@@ -341,7 +308,13 @@ if ser is None:
 fA1 = fA2 = fA3 = 0.0
 
 try:
-    while True:
+    #Call ici pour setup StartRobot à true
+    StartRobot = True #À changer pour la fonction
+    StopMoteur = False #À changer pour la fonction
+    #Ici probablement mettre une tâche dans un autre thread qui va recevoir l'appel du stop moteur et forcer l'arrêt des moteurs directements
+    
+
+    while StartRobot:
 
         # 1. Aller à la position scan
         print("\n--- Position scan ---")
@@ -351,7 +324,6 @@ try:
         print("--- Détection caméra ---")
         points_bruts = detecter_pilules()
 
-        # TODO : adapter selon dict camera
         
         points = []
         for p in points_bruts["pilules"]:
@@ -362,27 +334,35 @@ try:
                 p["couleur"]
             ))
 
-##      Why?
-#        if not points:
-#            print("Aucune pilule détectée")
-#            time.sleep(2)
-#            continue
-##
-        print(f"{len(points)} pilule(s) détectée(s) :")
-        for p in points:
-            print(f"  x={p[0]:.3f} y={p[1]:.3f} angle={p[2]:.1f}° couleur={p[3]}")
 
-        # 3. Générer la trajectoire
+        if not points:
+            print("Aucune pilule détectée, en attente de détection")
+            while not points:
+                points_bruts = detecter_pilules()
+                points = []
+                for p in points_bruts["pilules"]:
+                    points.append((
+                        p["x"],
+                        p["y"],
+                        p["angle"],
+                        p["couleur"]
+                    ))
 
-        traj = generate_trajectory(points)
-        print(f"  {len(traj)} points de trajectoire")
+        else:
+            print(f"{len(points)} pilule(s) détectée(s) :")
+            for p in points:
+                print(f"  x={p[0]:.3f} y={p[1]:.3f} angle={p[2]:.1f}° couleur={p[3]}")
 
-        # 4. Exécuter chaque point
-        for i, pt in enumerate(traj):
-            print(f"  Point {i+1}/{len(traj)} | mvt={int(pt[4])} pince={int(pt[5])} couleur={int(pt[6])}")
-            #fA1, fA2, fA3 = executer_point(ser, pt, fA1, fA2, fA3)
-            executer_point(ser, pt, fA1, fA2, fA3)
+            # 3. Générer la trajectoire
 
+            traj = generate_trajectory(points)
+            print(f"  {len(traj)} points de trajectoire")
+
+            # 4. Exécuter chaque point
+            for i, pt in enumerate(traj):
+                print(f"  Point {i+1}/{len(traj)} | mvt={int(pt[4])} pince={int(pt[5])} couleur={int(pt[6])}")
+                executer_point(ser, pt, fA1, fA2, fA3)
+        #Ici if call fonction = true, then StartRobot = False
         
 
 except KeyboardInterrupt:
