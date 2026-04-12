@@ -1,3 +1,4 @@
+import affichage
 from bras_robot import fk_xyz
 import bras_robot
 import donnees
@@ -28,3 +29,4 @@ while True:
 
     x, y, z = fk_xyz(bras_robot.p_w0, donnees.Donnees.L1, donnees.Donnees.L2, donnees.Donnees.L3, donnees.Donnees.sens_outil, (1.125), (-1.594), (1.807))
     print(f"Position de l'effecteur : x={x:.3f}, y={y:.3f}, z={z:.3f}")
+    affichage.Draw()

@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import bras_robot
 
 def Draw():
-    x = [bras_robot.p_w0[0,0], bras_robot.p_e1_w[0,0], bras_robot.p_e2_w[0,0], bras_robot.p_ee_w[0,0]]
-    y = [bras_robot.p_w0[1,0], bras_robot.p_e1_w[1,0], bras_robot.p_e2_w[1,0], bras_robot.p_ee_w[1,0]]
-    z = [bras_robot.p_w0[2,0], bras_robot.p_e1_w[2,0], bras_robot.p_e2_w[2,0], bras_robot.p_ee_w[2,0]]
+    x = [bras_robot.p_w0[0,0], bras_robot.p_e1_w[0,0], bras_robot.p_e2_w[0,0], bras_robot.p_ee_w[0,0], bras_robot.corners_cam_w[0,0]]
+    y = [bras_robot.p_w0[1,0], bras_robot.p_e1_w[1,0], bras_robot.p_e2_w[1,0], bras_robot.p_ee_w[1,0], bras_robot.corners_cam_w[1,0]]
+    z = [bras_robot.p_w0[2,0], bras_robot.p_e1_w[2,0], bras_robot.p_e2_w[2,0], bras_robot.p_ee_w[2,0], bras_robot.corners_cam_w[2,0]]
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')

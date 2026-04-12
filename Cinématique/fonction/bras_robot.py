@@ -321,32 +321,51 @@ def Calculate(iState, fA1, fA2, fA3, turn):
         qdot4 = -(float(qdot_123[1]) + float(qdot_123[2]))
  
         vitesse = (float(qdot_123[0]), float(qdot_123[1]), float(qdot_123[2]), qdot4)
- 
-"""
+
+
+def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
 # carré caméra
-        fov_h = np.deg2rad(110)
-        height = 480
-        width = 640
-        R = donnees.Donnees.z_cible
-        half_h = R * np.tan(fov_h/2)
-        fov_v = 2 * np.arctan(np.tan(fov_h/2)*(height/width))
-        half_w = R * np.tan(fov_v/2)
+        # Dimmension image
+        height_px = 480
+        width_px = 640
+        # Champ de vision de la caméra calculé
+        # Mettre à jour les angles selon la caméra
+        # angle 1
+        fov_w = np.deg2rad(81.04)
+        t1 = fov_w/2
+
+        # angle 2
+        fov_h = np.deg2rad(60.6)
+        t2 = fov_h/2
+        # Hauteur de la caméra (distance verticale à la cible)
+        R = donnees.Donnees.z_camera #à programmer
+
+        #Vecteur en x et y pour se rendre à l'origine de la caméra
+        half_w = R * math.tan(t1)
+        half_h = R * math.tan(t2)
+
+        posjb = np.array([(jb_x/width_px) * half_w, (jb_y/height_px) * half_h, 0]) 
  
         corners_local = np.array([
-            [ half_w,  half_h, 0],
+            [ half_w,  half_h, 0], 
             [ half_w, -half_h, 0],
             [-half_w, -half_h, 0],
             [-half_w,  half_h, 0]
         ]).T
-        corners_cam_w = p_cam_w + R_cam @ corners_local
+        Calculate(2,0,0,0,0) # Calcul des positions actuelles du robot pour mettre à jour les globals
+        R_cam = [1, 0, 0,
+                  0, -1, 0,
+                  0, 0, 1]
+        corners_cam_w = p_ee_w + R_cam @ corners_local
+
+        return posjb
  
  
         # globals pour affichage
  
-        p_w0 = arrP_w0
-        p_ee_w = p_ee
-        p_e1_w = p_e1
-        p_e2_w = p_e2
-        x_tool_w = x_tool
-        angles = (j1,j2,j3,j4)
-"""
+        # p_w0 = arrP_w0
+        # p_ee_w = p_ee
+        # p_e1_w = p_e1
+        # p_e2_w = p_e2
+        # x_tool_w = x_tool
+        # angles = (j1,j2,j3,j4)

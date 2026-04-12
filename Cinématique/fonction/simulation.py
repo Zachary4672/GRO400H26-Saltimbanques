@@ -13,7 +13,7 @@ donnees.Donnees.y_cible = 0.1
 donnees.Donnees.z_cible = 0.1
 
 # Calcul cinématique inverse
-bras_robot.Calculate(True, 0, 0, 0)
+bras_robot.Calculate(2, 0, 0, 0, 0 )
 
 # Position caméra
 cam_pos = bras_robot.p_cam_w.flatten()  # position caméra
