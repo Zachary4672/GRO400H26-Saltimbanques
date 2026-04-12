@@ -27,7 +27,8 @@ class Donnees:
     Angle_cible = 1
 
     #Position caméra par rapport à L3
-    #x_cam = 
+    x_cam = 0.031
+    z_cam = 0.021
 
     # Orientation de l'outil: perpendiculaire au sol (plan XY)
     # -1 = pointe vers le sol (-z), +1 = pointe vers le haut (+z)
@@ -37,9 +38,9 @@ class Donnees:
     # "bas" = elbow-down, "haut" = elbow-up
     config_coude = "bas"
 
-    x_scan = -0.06
-    y_scan = -0.155
-    z_scan = -0.1
+    x_scan = 0.2
+    y_scan = 0
+    z_scan = 0.1
 
    # Position des pots (x,y)
 

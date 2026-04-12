@@ -4,8 +4,10 @@ from pathlib import Path
 import donnees
 import bras_robot
 import affichage
+import sys
 import json
-from pick_and_place import generate_trajectory, rouge, bleu, jaune
+sys.path.append(str(Path(__file__).parents[2]))
+import integration
 
 PORT  = "COM6"  # à adapter selon votre système
 BAUD  = 115200
@@ -15,6 +17,7 @@ BAUD  = 115200
 X_SCAN = donnees.Donnees.x_scan
 Y_SCAN = donnees.Donnees.y_scan
 Z_SCAN = donnees.Donnees.z_scan
+Z_PICK = donnees.Donnees.z_pick
 LastMessage = None
 StartRobot = False  #Variable utilisé par le HMI
 StopMoteur = False  #Variable utilisé par le HMI
@@ -68,9 +71,9 @@ def envoyer_angles(ser, a1, b1, a2, b2, a3, b3, a4):
     elif directive == "Pince0":
         message = f"#Pince,0*\n"
     elif directive == "StopMoteur":
-        message = f"#StopMoteur,1*\n"
+        message = f"#Reset*\n"
     elif directive == "StartMoteur":
-        message = f"#StopMoteur,0*\n"
+        message = f"#Good*\n"
     ser.write(message.encode("utf-8"))
 
 #Fonction: lire_responses permet de recevoir les informations du buffer "ser" et vérifier les réponses
@@ -120,17 +123,15 @@ def aller_a(ser, x, y, z, fA1=0.0, fA2=0.0, fA3=0.0):
 
     return result[0], result[1], result[2], angle
 
-def detecter_pilules():
+def detecter_pilules(pilules):
     # Simuler la détection de pilules
-    # TODO : remplacer par la vraie détection caméra
-    
-    return {
-        "pilules": [
-            {"x": 0.2, "y": 0.01, "angle": 0, "couleur": "rouge"},
-            {"x": 0.2, "y": 0.0, "angle": 45, "couleur": "bleu"},
-            {"x": 0.2, "y": -0.01, "angle": 30, "couleur": "jaune"},
-        ]   
-    }
+    pilules = integration.scan_cam() 
+    taille = len(pilules)
+    _ = 0
+    for _ in taille:  # nombre de frames   
+        pilules[_]["x"], pilules[_]["y"] = bras_robot.CalculateCamera(X_SCAN,Y_SCAN,pilules[_]["x"], pilules[_]["y"])
+
+    return
 
 
 # Exécuter un point de trajectoire
@@ -299,7 +300,6 @@ def Move_ReverseLineaire(LastMessage):
 # MAIN
 
 
-COULEUR_MAP = {"rouge": rouge, "bleu": bleu, "jaune": jaune} #à définir
 
 ser = connect_serial()
 if ser is None:
@@ -322,47 +322,38 @@ try:
 
         # 2. Détecter les pilules avec la caméra
         print("--- Détection caméra ---")
-        points_bruts = detecter_pilules()
+        
 
         
-        points = []
-        for p in points_bruts["pilules"]:
-            points.append((
-                p["x"],
-                p["y"],
-                p["angle"],
-                p["couleur"]
-            ))
-
+        points = [] 
+        detecter_pilules(points)
 
         if not points:
             print("Aucune pilule détectée, en attente de détection")
             while not points:
-                points_bruts = detecter_pilules()
                 points = []
-                for p in points_bruts["pilules"]:
-                    points.append((
-                        p["x"],
-                        p["y"],
-                        p["angle"],
-                        p["couleur"]
-                    ))
+                detecter_pilules(points)
+
+
 
         else:
-            print(f"{len(points)} pilule(s) détectée(s) :")
-            for p in points:
-                print(f"  x={p[0]:.3f} y={p[1]:.3f} angle={p[2]:.1f}° couleur={p[3]}")
-
-            # 3. Générer la trajectoire
-
-            traj = generate_trajectory(points)
-            print(f"  {len(traj)} points de trajectoire")
-
-            # 4. Exécuter chaque point
-            for i, pt in enumerate(traj):
-                print(f"  Point {i+1}/{len(traj)} | mvt={int(pt[4])} pince={int(pt[5])} couleur={int(pt[6])}")
+            len_points = len(points)
+            pil = 0
+            for pil in len_points:
+                pt = (points[pil]["x"], points[pil]["y"], Z_PICK, points[pil]["angle"], 0, 1, points[pil]["couleur"])
                 executer_point(ser, pt, fA1, fA2, fA3)
-        #Ici if call fonction = true, then StartRobot = False
+                z_drop = donnees.Donnees.z_drop
+                if points[pil]["couleur"] == "rouge":
+                    x_drop = donnees.Donnees.x_r
+                    y_drop = donnees.Donnees.y_r
+                elif points[pil]["couleur"] == "bleu":
+                    x_drop = donnees.Donnees.x_b
+                    y_drop = donnees.Donnees.y_b
+                else:
+                    x_drop = donnees.Donnees.x_j
+                    y_drop = donnees.Donnees.y_j
+                pt = (x_drop, y_drop, z_drop, 90, 0, 0, points[pil]["couleur"])
+                #Ici if call fonction = true, then StartRobot = False
         
 
 except KeyboardInterrupt:
