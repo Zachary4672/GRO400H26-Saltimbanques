@@ -24,7 +24,7 @@ def scan_cam():
     if not mv.pos_queue.empty():
         pos_JB = mv.pos_queue.get()
         print(f"Position JB {pos_JB}")
-        return pos_JB.x, pos_JB.y, pos_JB.angle, pos_JB.couleur
+        return pos_JB
     if not mv.disp_queue.empty():
         frame = mv.disp_queue.get()
         cv2.imshow("YOLO", frame)

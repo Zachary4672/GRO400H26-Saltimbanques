@@ -344,7 +344,7 @@ def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
         half_w = R * math.tan(t1)
         half_h = R * math.tan(t2)
 
-        posjb = np.array([(jb_x/width_px) * half_w, (jb_y/height_px) * half_h, 0]) 
+        posjb = np.array([(jb_x/width_px) * half_w + donnees.Donnees.x_cam, (jb_y/height_px) * half_h, 0]) 
  
         corners_local = np.array([
             [ half_w,  half_h, 0], 
@@ -358,7 +358,7 @@ def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
                   0, 0, 1]
         corners_cam_w = p_ee_w + R_cam @ corners_local
 
-        return posjb
+        return posjb[0],posjb[1]
  
  
         # globals pour affichage
