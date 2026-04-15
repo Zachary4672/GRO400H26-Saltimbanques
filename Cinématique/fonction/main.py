@@ -1,6 +1,9 @@
+import cv2
 import serial
 import time
 from pathlib import Path
+
+from torch import mv
 import donnees
 import bras_robot
 import affichage
@@ -104,6 +107,7 @@ def aller_a(ser, x, y, z, fA1=0.0, fA2=0.0, fA3=0.0):
     global directive
 
     writingJSON(x, y, z)
+    
     bras_robot.Calculate(2, fA1, fA2, fA3, turn)
     
     j1, j2, j3, angle = bras_robot.angles
@@ -127,8 +131,9 @@ def aller_a(ser, x, y, z, fA1=0.0, fA2=0.0, fA3=0.0):
 
 def detecter_pilules(pilules):
     # Simuler la détection de pilules
-    integration.display_cam()
     pilules = integration.scan_cam() 
+    if pilules is None:
+        return []
     taille = len(pilules)
     _ = 0
     for _ in range(taille):  # nombre de frames   
@@ -145,6 +150,9 @@ def executer_point(ser, pt, fA1, fA2, fA3):
     writingJSON(x, y, z)
 
     bras_robot.Calculate(1, fA1, fA2, fA3, 1)
+    if bras_robot.skip:
+        print("Point hors de portée, passage au point suivant")
+        return
     # if bras_robot.skip:
     #     print("Point hors de portée, passage au point suivant")
     #     bras_robot.skip = False
@@ -324,18 +332,20 @@ try:
 
     while StartRobot:
 
+        # affichage camera
+        integration.display_cam()
         # 1. Aller à la position scan
         print("\n--- Position scan ---")
         fA1, fA2, fA3, _ = aller_a(ser, X_SCAN, Y_SCAN, Z_SCAN, fA1, fA2, fA3)
 
         # 2. Détecter les pilules avec la caméra
         print("--- Détection caméra ---")
-        
+        time.sleep(2) # Attente pour stabiliser la caméra
 
         
         points = [] 
         points = detecter_pilules(points)
-
+         
         if not points:
             print("Aucune pilule détectée, en attente de détection")
             while not points:
@@ -350,6 +360,9 @@ try:
             for pil in range(len_points):
                 pt = (points[pil]["x"], points[pil]["y"], Z_PICK, points[pil]["angle"], 0, 1, points[pil]["color"])
                 executer_point(ser, pt, fA1, fA2, fA3)
+                if bras_robot.skip:
+                    bras_robot.skip = False
+                    continue
                 z_drop = donnees.Donnees.z_drop
                 if points[pil]["color"] == "rouge":
                     x_drop = donnees.Donnees.x_r

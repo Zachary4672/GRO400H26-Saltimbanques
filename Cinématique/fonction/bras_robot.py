@@ -16,6 +16,7 @@ gangles = 0
 p_e1_w = 0
 p_e2_w = 0
 p_ee_w = 0
+skip = False
 # -----------------------------
 # Rotations
 # -----------------------------
@@ -168,10 +169,10 @@ def Calculate(iState, fA1, fA2, fA3, turn):
    
     # atteignabilité
         if D > (L1 + L2) + 1e-9 or D < abs(L1 - L2) - 1e-9:
-            # global skip
-            # skip = True
-            # return
-            raise ValueError("Cible hors de l'espace atteignable")
+            global skip
+            skip = True
+            return
+            # raise ValueError("Cible hors de l'espace atteignable")
         
    
     # 2) coude (loi des cosinus)
@@ -330,7 +331,8 @@ def Calculate(iState, fA1, fA2, fA3, turn):
 def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
 # carré caméra
         global p_ee_w
-        offset_descente_x = 0.005
+        # pour compenser le jeu des moteurs et du mvt linéaire
+        offset_descente_x = 0.0075
         offset_descente_y = 0.003
          # à ajuster pour que le point calculé soit au centre de la boîte (compense la hauteur de la caméra)
         # Dimmension image
