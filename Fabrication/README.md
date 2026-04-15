@@ -24,7 +24,7 @@ Mécanique :
 Électrique :
 
 * Arduino OpenRB  
-  ![][image1]  
+![image](images/image1.png)
 * Raspberry Pi 5
 
 	![][image2]
