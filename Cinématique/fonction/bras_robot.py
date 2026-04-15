@@ -330,7 +330,9 @@ def Calculate(iState, fA1, fA2, fA3, turn):
 def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
 # carré caméra
         global p_ee_w
-        offset_descente = 0.01 # à ajuster pour que le point calculé soit au centre de la boîte (compense la hauteur de la caméra)
+        offset_descente_x = 0.005
+        offset_descente_y = 0.003
+         # à ajuster pour que le point calculé soit au centre de la boîte (compense la hauteur de la caméra)
         # Dimmension image
         height_px = 480
         width_px = 640
@@ -358,24 +360,16 @@ def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
             [-half_w, -half_h, 0],
             [-half_w,  half_h, 0]
         ]).T
-<<<<<<< HEAD
-        Calculate(2,0,0,0,0) # Calcul des positions actuelles du robot pour mettre à jour les globals
-        R_cam = [1, 0, 0,
-                  0, -1, 0,
-                  0, 0, 1]
-        corners_cam_w = p_ee_w + R_cam @ corners_local
 
-        return posjb
-=======
         # Calculate(2,0,0,0,0) # Calcul des positions actuelles du robot pour mettre à jour les globals
         # R_cam = [1, 0, 0,
         #           0, -1, 0,
         #           0, 0, 1]
         # corners_cam_w = p_ee_w + R_cam @ corners_local
-        posjb[0] = float(p_ee_w[0, 0]) -donnees.Donnees.x_cam + float(posjb[0]) + offset_descente
-        posjb[1] = float(p_ee_w[1, 0])+ float(posjb[1])
+        posjb[0] = float(p_ee_w[0, 0]) -donnees.Donnees.x_cam + float(posjb[0]) + offset_descente_x
+        posjb[1] = float(p_ee_w[1, 0])+ float(posjb[1]) -offset_descente_y
         return posjb[0], posjb[1]
->>>>>>> parent of e6407ce (débug encore)
+
  
  
         # globals pour affichage
