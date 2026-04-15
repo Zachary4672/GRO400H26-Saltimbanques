@@ -327,7 +327,7 @@ try:
         # 1. Aller à la position scan
         print("\n--- Position scan ---")
         fA1, fA2, fA3, _ = aller_a(ser, X_SCAN, Y_SCAN, Z_SCAN, fA1, fA2, fA3)
-        time.sleep(1)  # Attente pour stabiliser la caméra avant la détection
+
         # 2. Détecter les pilules avec la caméra
         print("--- Détection caméra ---")
         
