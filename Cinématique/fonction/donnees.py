@@ -11,8 +11,9 @@ class Donnees:
     Lcam_z = 0
 
     h_boite = 0.086
-    z_pick = -0.086
-    z_drop = 0.02
+    z_pick = -0.072
+    z_drop = 0.01
+   
 
     # position world de la base
     wx, wy, wz = 0.0, 0.0, 0.0

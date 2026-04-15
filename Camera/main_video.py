@@ -20,10 +20,10 @@ run_detection = th.Event()
 rouge_low = 8
 rouge_high = 170
 orange = 15
-jaune = 25
+jaune = 35
 vert = 85
 mauve = 120
-noir = 130
+noir = 125
 rose = 180
 
 
@@ -43,18 +43,22 @@ def capture_frame(cap, frame_queue):
     new_K, roi = cv2.getOptimalNewCameraMatrix(K, dist, (w, h), 0, (w, h))
     while True:
         ret, frame = cap.read()
-        frame = cv2.undistort(frame, K, dist, None, new_K)
+
+        if not ret or frame is None:
+            continue
+        frame = frame.copy()
+        undistord = cv2.undistort(frame, K, dist, None, new_K)
+        frame = undistord
         x, y, w, h = roi
         frame = frame[y:y + h, x:x + w]
-        if not ret:
-            continue
+        
         if frame_queue.full():
             try:
                 frame_queue.get_nowait()
             except q.Empty:
                 pass
 
-        frame_queue.put(frame)
+        frame_queue.put(frame.copy())
         time.sleep(0.001)
 
 def image_process(frame_queue):

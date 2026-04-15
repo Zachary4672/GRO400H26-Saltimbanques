@@ -9,7 +9,7 @@ import json
 sys.path.append(str(Path(__file__).parents[2]))
 import integration
 
-PORT  = "COM6"  # à adapter selon votre système
+PORT  = "COM3"  # à adapter selon votre système
 BAUD  = 115200
 
 
@@ -24,6 +24,8 @@ StopMoteur = False  #Variable utilisé par le HMI
 turn = 0
 directive = "Joint"
 
+# Initialisation de la caméra et des threads
+integration.init_integration()
 # Série
 
 
@@ -61,7 +63,7 @@ def writingJSON(x_pos, y_pos, z_pos):
 def envoyer_angles(ser, a1, b1, a2, b2, a3, b3, a4):
     global turn, directive
     if directive == "Joint":
-        message = "#"+ directive + f",{a1:.4f}~{a2:.4f} {a3:.4f}<{a4:.4f}*\n"
+        message = "#"+ directive + f",{a1:.4f}~{a2:.4f} {a3:.4f}/{a4:.4f}*\n"
     elif directive == "Lineaire" and turn == 0:
         message = "#" + directive + f",{a1:.4f}~{b1:.4f} {a2:.4f}_{b2:.4f}&{a3:.4f}!{b3:.4f}*\n"
     elif directive == "LineaireReverse":
@@ -102,12 +104,12 @@ def aller_a(ser, x, y, z, fA1=0.0, fA2=0.0, fA3=0.0):
     global directive
 
     writingJSON(x, y, z)
-    bras_robot.Calculate(1, fA1, fA2, fA3, turn)
+    bras_robot.Calculate(2, fA1, fA2, fA3, turn)
+    
     j1, j2, j3, angle = bras_robot.angles
 
     directive = "Joint"
-
-    envoyer_angles(ser, j1,0, -j2,0, -j3,0, angle)
+    envoyer_angles(ser, j1,0, -j2,0, -j3,0, 90)
 
     Parts = [None]
     MemoryMessage = None
@@ -125,13 +127,14 @@ def aller_a(ser, x, y, z, fA1=0.0, fA2=0.0, fA3=0.0):
 
 def detecter_pilules(pilules):
     # Simuler la détection de pilules
+    integration.display_cam()
     pilules = integration.scan_cam() 
     taille = len(pilules)
     _ = 0
-    for _ in taille:  # nombre de frames   
+    for _ in range(taille):  # nombre de frames   
         pilules[_]["x"], pilules[_]["y"] = bras_robot.CalculateCamera(X_SCAN,Y_SCAN,pilules[_]["x"], pilules[_]["y"])
 
-    return
+    return pilules
 
 
 # Exécuter un point de trajectoire
@@ -142,7 +145,12 @@ def executer_point(ser, pt, fA1, fA2, fA3):
     writingJSON(x, y, z)
 
     bras_robot.Calculate(1, fA1, fA2, fA3, 1)
+    # if bras_robot.skip:
+    #     print("Point hors de portée, passage au point suivant")
+    #     bras_robot.skip = False
+    #     return
     j1, j2, j3, j4 = bras_robot.angles
+    j4 = angle
 
     if type_mvt == 0:       
         # Mouvement Joint
@@ -326,7 +334,7 @@ try:
 
         
         points = [] 
-        detecter_pilules(points)
+        points = detecter_pilules(points)
 
         if not points:
             print("Aucune pilule détectée, en attente de détection")
@@ -339,20 +347,21 @@ try:
         else:
             len_points = len(points)
             pil = 0
-            for pil in len_points:
-                pt = (points[pil]["x"], points[pil]["y"], Z_PICK, points[pil]["angle"], 0, 1, points[pil]["couleur"])
+            for pil in range(len_points):
+                pt = (points[pil]["x"], points[pil]["y"], Z_PICK, points[pil]["angle"], 0, 1, points[pil]["color"])
                 executer_point(ser, pt, fA1, fA2, fA3)
                 z_drop = donnees.Donnees.z_drop
-                if points[pil]["couleur"] == "rouge":
+                if points[pil]["color"] == "rouge":
                     x_drop = donnees.Donnees.x_r
                     y_drop = donnees.Donnees.y_r
-                elif points[pil]["couleur"] == "bleu":
+                elif points[pil]["color"] == "jaune":
                     x_drop = donnees.Donnees.x_b
                     y_drop = donnees.Donnees.y_b
                 else:
                     x_drop = donnees.Donnees.x_j
                     y_drop = donnees.Donnees.y_j
-                pt = (x_drop, y_drop, z_drop, 90, 0, 0, points[pil]["couleur"])
+                pt = (x_drop, y_drop, z_drop, 90, 0, 0, points[pil]["color"])
+                executer_point(ser, pt, fA1, fA2, fA3)
                 #Ici if call fonction = true, then StartRobot = False
         
 
@@ -360,3 +369,4 @@ except KeyboardInterrupt:
     print("\nArrêt demandé.")
 finally:
     ser.close()
+    integration.close_camera()

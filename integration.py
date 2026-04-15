@@ -11,9 +11,11 @@ from Camera import main_video as mv
 #declarer que la liste soit une variable globale
 key = cv2.waitKey(1) & 0xFF
 
-mv.init_camera()
-th.Thread(target=mv.capture_frame, args=(mv.cap,mv.frame_queue), daemon=True).start()
-th.Thread(target=mv.image_process, args=(mv.frame_queue,), daemon=True).start()
+def init_integration():
+    mv.init_camera()
+    th.Thread(target=mv.capture_frame, args=(mv.cap,mv.frame_queue), daemon=True).start()
+    th.Thread(target=mv.image_process, args=(mv.frame_queue,), daemon=True).start()
+
 
 #Main
 def scan_cam():
@@ -23,11 +25,12 @@ def scan_cam():
         time.sleep(0.05)
     if not mv.pos_queue.empty():
         pos_JB = mv.pos_queue.get()
+        if not mv.disp_queue.empty():
+            frame = mv.disp_queue.get()
+            cv2.imshow("YOLO", frame)
         print(f"Position JB {pos_JB}")
-        return pos_JB.x, pos_JB.y, pos_JB.angle, pos_JB.couleur
-    if not mv.disp_queue.empty():
-        frame = mv.disp_queue.get()
-        cv2.imshow("YOLO", frame)
+        return pos_JB
+    
     if key == 27:
         return
 
@@ -42,7 +45,7 @@ def display_cam():
         return
 
 
-
-mv.cap.release()
-mv.cv2.destroyAllWindows()
+def close_camera():
+    mv.cap.release()
+    cv2.destroyAllWindows()
 

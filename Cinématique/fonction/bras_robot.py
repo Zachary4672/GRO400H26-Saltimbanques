@@ -168,7 +168,11 @@ def Calculate(iState, fA1, fA2, fA3, turn):
    
     # atteignabilité
         if D > (L1 + L2) + 1e-9 or D < abs(L1 - L2) - 1e-9:
+            # global skip
+            # skip = True
+            # return
             raise ValueError("Cible hors de l'espace atteignable")
+        
    
     # 2) coude (loi des cosinus)
         c3 = (D*D - L1*L1 - L2*L2) / (2*L1*L2)
@@ -325,26 +329,28 @@ def Calculate(iState, fA1, fA2, fA3, turn):
 
 def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
 # carré caméra
+        global p_ee_w
+        offset_descente = 0.01 # à ajuster pour que le point calculé soit au centre de la boîte (compense la hauteur de la caméra)
         # Dimmension image
         height_px = 480
         width_px = 640
         # Champ de vision de la caméra calculé
         # Mettre à jour les angles selon la caméra
         # angle 1
-        fov_w = np.deg2rad(81.04)
+        fov_w = np.deg2rad(76.53)
         t1 = fov_w/2
 
         # angle 2
-        fov_h = np.deg2rad(60.6)
+        fov_h = np.deg2rad(56.27)
         t2 = fov_h/2
         # Hauteur de la caméra (distance verticale à la cible)
-        R = donnees.Donnees.z_camera #à programmer
+        R = 0.187 #donnees.Donnees.z_cam + donnees.Donnees.h_boite + donnees.Donnees.z_scan #à programmer
 
         #Vecteur en x et y pour se rendre à l'origine de la caméra
         half_w = R * math.tan(t1)
         half_h = R * math.tan(t2)
 
-        posjb = np.array([(jb_x/width_px) * half_w, (jb_y/height_px) * half_h, 0]) 
+        posjb = np.array([((jb_y/height_px) * 2*half_h), ((jb_x/width_px) * 2*half_w)-half_w, 0]) 
  
         corners_local = np.array([
             [ half_w,  half_h, 0], 
@@ -352,13 +358,14 @@ def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
             [-half_w, -half_h, 0],
             [-half_w,  half_h, 0]
         ]).T
-        Calculate(2,0,0,0,0) # Calcul des positions actuelles du robot pour mettre à jour les globals
-        R_cam = [1, 0, 0,
-                  0, -1, 0,
-                  0, 0, 1]
-        corners_cam_w = p_ee_w + R_cam @ corners_local
-
-        return posjb
+        # Calculate(2,0,0,0,0) # Calcul des positions actuelles du robot pour mettre à jour les globals
+        # R_cam = [1, 0, 0,
+        #           0, -1, 0,
+        #           0, 0, 1]
+        # corners_cam_w = p_ee_w + R_cam @ corners_local
+        posjb[0] = float(p_ee_w[0, 0]) -donnees.Donnees.x_cam + float(posjb[0]) + offset_descente
+        posjb[1] = float(p_ee_w[1, 0])+ float(posjb[1])
+        return posjb[0], posjb[1]
  
  
         # globals pour affichage
