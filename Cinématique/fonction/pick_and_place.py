@@ -63,12 +63,11 @@ def normalize_couleur(couleur):
 # -----------------------------
 # PICK
 # -----------------------------
-def generate_pick(pil):
-    x, y, angle, couleur = pil
-    couleur = normalize_couleur(couleur)
+def generate_pick(point):
+    couleur = normalize_couleur(point[_]["couleur"])
 
     return [
-        [x, y, z_pick, angle, Joint, Fermee, couleur],
+        [point[_]["x"], point[_]["y"], z_pick, point[_]["angle"], Joint, Fermee, point[_]["couleur"]],
     ]
 
 # -----------------------------
@@ -89,10 +88,11 @@ def generate_drop(pil):
 # -----------------------------
 def generate_trajectory(points):
     traj = []
-
-    for pil in points:
-        traj += generate_pick(pil)
-        traj += generate_drop(pil)
+    len_points = len(points)
+    pil = 0
+    for pil in len_points:
+        traj += generate_pick(points[pil])
+        traj += generate_drop(points[pil])
 
     return np.array(traj)
 
