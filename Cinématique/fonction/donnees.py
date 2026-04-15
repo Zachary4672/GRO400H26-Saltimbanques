@@ -11,7 +11,7 @@ class Donnees:
     Lcam_z = 0
 
     h_boite = 0.086
-    z_pick = -0.072
+    z_pick = -0.08
     z_drop = 0.01
    
 
