@@ -8,8 +8,9 @@
 
 #include <Dynamixel2Arduino.h>
 #include <Servo.h>
+#include <math.h>
 //L'angle envoyé au moteurs pour ouvrir et fermer la pince
-#define ouvert 30
+#define ouvert 20
 #define fermer 0
 
 // Please modify it to suit your hardware.
@@ -64,6 +65,7 @@ const byte buttonPin = 2;
 float deg1 = 0;
 float deg2 = 0;
 float deg3 = 0;
+float deg4 = 0;
 int v1 = 15;
 int v2 = 15;
 int v3 = 15;
@@ -281,6 +283,7 @@ void setup() {
   Poignet.attach(servoPoignet);
   Pince.attach(servoPince);
   Pince.write(ouvert);
+  Poignet.write(90);
 
   pinMode(buttonPin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(buttonPin), monInterruption, FALLING);
@@ -338,10 +341,17 @@ void loop() {
         deg3 = ((a3 * 180.0) / PI) + 360;
 
         //commence le mouvement en joint vers la position voulu
+        
         Set_target_angle();
 
         //déplace le poignet avant de faire le déplacement linéaire pour que le poignet soit dans la bonne position pendant le déplacement linéaire
-        Poignet.write(a4);
+        if(a4>180)
+        {
+          deg4 = abs(a4) - 180;
+        }
+        deg4 = abs(a4);
+
+        Poignet.write(deg4);
 
         //renvoie la position actuel des moteur en RAD au code de cinématique et lui dit que le mouvement est fini
         position1 = dxl.getPresentPosition(Joint_1, UNIT_DEGREE);
@@ -363,7 +373,6 @@ void loop() {
       int UnderIndex = msg.indexOf('_');
       int hyperIndex = msg.indexOf('&');
       int exclaIndex = msg.indexOf('!');
-      int slashindex = msg.indexOf('/');
       int starIndex = msg.indexOf('*');
 
       //Vérifie si le message est valide en vérifiant s'il y a pas d'erreur de position des symboles et si c'est le cas alors on peut extraire les valeurs du message
@@ -375,14 +384,13 @@ void loop() {
         String value_A2 = msg.substring(spaceIndex + 1, UnderIndex);
         String value_V2 = msg.substring(UnderIndex + 1, hyperIndex);
         String value_A3 = msg.substring(hyperIndex + 1, exclaIndex);
-        String value_V3 = msg.substring(exclaIndex + 1, slashindex);
-        String value_A4 = msg.substring(slashindex + 1, starIndex);
+        String value_V3 = msg.substring(exclaIndex + 1, starIndex);
+
 
         //mets les valeurs des angle dans des variable temporaire
         a1 = value_A1.toFloat();
         a2 = value_A2.toFloat();
         a3 = value_A3.toFloat();
-        a4 = value_A4.toFloat();
 
         //Définti les vitesses de chaque moteur en redéfinissant les variable v1 v2 v3 pour les utilisé dans set_target_angle
         v1 = abs(value_V1.toFloat()*9.549/0.229);

@@ -360,14 +360,13 @@ def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
             [-half_w, -half_h, 0],
             [-half_w,  half_h, 0]
         ]).T
-        # Calculate(2,0,0,0,0) # Calcul des positions actuelles du robot pour mettre à jour les globals
-        # R_cam = [1, 0, 0,
-        #           0, -1, 0,
-        #           0, 0, 1]
-        # corners_cam_w = p_ee_w + R_cam @ corners_local
-        posjb[0] = float(p_ee_w[0, 0]) -donnees.Donnees.x_cam + float(posjb[0]) +offset_descente_x
-        posjb[1] = float(p_ee_w[1, 0])+ float(posjb[1]) - offset_descente_y
-        return posjb[0], posjb[1]
+        Calculate(2,0,0,0,0) # Calcul des positions actuelles du robot pour mettre à jour les globals
+        R_cam = [1, 0, 0,
+                  0, -1, 0,
+                  0, 0, 1]
+        corners_cam_w = p_ee_w + R_cam @ corners_local
+
+        return posjb
  
  
         # globals pour affichage
