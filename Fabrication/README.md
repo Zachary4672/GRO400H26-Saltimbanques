@@ -1,10 +1,13 @@
-\#\#Ajout d’une photo du robot final\#\#
+![image](images/image11.jpeg)
 
 ## **Liste des matériaux et composantes** 
 
 ---
 Pièces à imprimer :  
 Voir les modèles 3D ici : [Dossier CAD](../CAD/)
+
+Pièces à découpé :
+Voir les fichiers ici : [Dossier Decoupe](../CAD/Decoupe)
 
 Mécanique :
 
