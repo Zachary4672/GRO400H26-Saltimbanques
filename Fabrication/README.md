@@ -4,7 +4,7 @@
 
 ---
 Pièces à imprimer :  
-Voir les modèles 3D ici : [Dossier CAD](CAD/)
+Voir les modèles 3D ici : [Dossier CAD](../CAD/)
 
 Mécanique :
 
