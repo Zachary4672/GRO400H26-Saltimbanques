@@ -31,10 +31,10 @@ def init_camera():
     global cap, model, K, dist
 
     model = YOLO("Camera/jelly_bean1.pt")
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
 
-    K = np.load("Camera/K.npy")
-    dist = np.load("Camera/dist.npy")
+    K = np.load("Camera/K2.npy")
+    dist = np.load("Camera/dist2.npy")
 
 def capture_frame(cap, frame_queue):
     ret, frame = cap.read()
@@ -219,35 +219,8 @@ def image_process(frame_queue):
                 pass
 
         disp_queue.put(frame)
-        cv2.imshow("YOLO", frame)
-        cv2.waitKey(1)
         run_detection.clear()
 
-
-
-
-# th.Thread(target=capture_frame, args=(cap,frame_queue), daemon=True).start()
-# th.Thread(target=image_process, args=(frame_queue,), daemon=True).start()
-
-# #Main
-# while True:
-
-#     if cv2.waitKey(1) == ord('d'):  # exemple touche clavier
-#         for _ in range(5):  # nombre de frames
-#             run_detection.set()
-#             time.sleep(0.05)
-#         if not pos_queue.empty():
-#             pos_JB = pos_queue.get()
-#             print(f"Position JB {pos_JB}")
-#     if not disp_queue.empty():
-#         frame = disp_queue.get()
-#         cv2.imshow("YOLO", frame)
-#     if disp_queue.empty() and not frame_queue.empty():
-#         frame = frame_queue.get()
-#         cv2.imshow("No detection", frame)
-#     if cv2.waitKey(1) == 27:
-#         break
-#     key = cv2.waitKey(1) & 0xFF
 
 
 

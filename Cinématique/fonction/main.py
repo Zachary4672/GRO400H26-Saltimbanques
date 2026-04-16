@@ -12,7 +12,7 @@ import json
 sys.path.append(str(Path(__file__).parents[2]))
 import integration
 
-PORT  = "COM3"  # à adapter selon votre système
+PORT  = "/dev/ttyACM0"  # à adapter selon votre système
 BAUD  = 115200
 
 
@@ -331,7 +331,7 @@ try:
     #Ici probablement mettre une tâche dans un autre thread qui va recevoir l'appel du stop moteur et forcer l'arrêt des moteurs directements
     
 
-    while StartRobot:
+    while True:
 
         
         # 1. Aller à la position scan
