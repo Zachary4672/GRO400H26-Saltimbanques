@@ -56,7 +56,7 @@ Avant de procéder à l’assemblage, assurez-vous d’avoir toutes les pièces 
 ![image](images/image5.jpg)
 
 5. **Assemblage de l’effecteur**
-![][image](images/image4.png)
+![image](images/image4.png)
 
 \*Les pinces sont imprimés en 3D en TPU.
 6. **Assemblage final**
