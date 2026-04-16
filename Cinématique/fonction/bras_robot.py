@@ -332,7 +332,7 @@ def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
 # carré caméra
         global p_ee_w
         # pour compenser le jeu des moteurs et du mvt linéaire
-        offset_descente_x = 0.0075
+        offset_descente_x = 0.009
         offset_descente_y = 0.003
          # à ajuster pour que le point calculé soit au centre de la boîte (compense la hauteur de la caméra)
         # Dimmension image

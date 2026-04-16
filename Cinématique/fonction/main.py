@@ -130,6 +130,7 @@ def aller_a(ser, x, y, z, fA1=0.0, fA2=0.0, fA3=0.0):
     return result[0], result[1], result[2], angle
 
 def detecter_pilules(pilules):
+    integration.display_cam()
     # Simuler la détection de pilules
     pilules = integration.scan_cam() 
     if pilules is None:
@@ -332,17 +333,14 @@ try:
 
     while StartRobot:
 
-        # affichage camera
-        integration.display_cam()
+        
         # 1. Aller à la position scan
         print("\n--- Position scan ---")
         fA1, fA2, fA3, _ = aller_a(ser, X_SCAN, Y_SCAN, Z_SCAN, fA1, fA2, fA3)
-
+        time.sleep(2) # Attente pour stabiliser la caméra
         # 2. Détecter les pilules avec la caméra
         print("--- Détection caméra ---")
-        time.sleep(2) # Attente pour stabiliser la caméra
 
-        
         points = [] 
         points = detecter_pilules(points)
          
@@ -375,6 +373,7 @@ try:
                     y_drop = donnees.Donnees.y_j
                 pt = (x_drop, y_drop, z_drop, 90, 0, 0, points[pil]["color"])
                 executer_point(ser, pt, fA1, fA2, fA3)
+                time.sleep(2)
                 #Ici if call fonction = true, then StartRobot = False
         
 

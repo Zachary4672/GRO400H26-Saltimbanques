@@ -20,22 +20,21 @@ def init_integration():
 
 #Main
 def scan_cam():
-
+    # 1. déclencher détection
     for _ in range(5):  # nombre de frames
         cam.run_detection.set()
         time.sleep(0.05)
+        cv2.waitKey(1)
+
+    # if not cam.disp_queue.empty():
+    #     frame = cam.disp_queue.get()
+    #     cv2.imshow("YOLO", frame)
+
     if not cam.pos_queue.empty():
         pos_JB = cam.pos_queue.get()
-        if not cam.disp_queue.empty():
-            frame = cam.disp_queue.get()
-            cv2.imshow("YOLO", frame)
         print(f"Position JB {pos_JB}")
         return pos_JB
-    key = cv2.waitKey(1) & 0xFF 
-    if key == 27:
-        return
 
-    
 
 def display_cam():
     if not cam.disp_queue.empty():

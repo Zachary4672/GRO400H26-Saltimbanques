@@ -219,7 +219,8 @@ def image_process(frame_queue):
                 pass
 
         disp_queue.put(frame)
-        
+        cv2.imshow("YOLO", frame)
+        cv2.waitKey(1)
         run_detection.clear()
 
 
