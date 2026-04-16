@@ -11,8 +11,8 @@ class Donnees:
     Lcam_z = 0
 
     h_boite = 0.086
-    z_pick = -0.072
-    z_drop = 0.01
+    z_pick = -0.08
+    z_drop = 0.02
    
 
     # position world de la base
@@ -29,7 +29,7 @@ class Donnees:
 
     #Position caméra par rapport à L3
     x_cam = 0.031
-    z_cam = 0.021
+    z_cam = 0.01
 
     # Orientation de l'outil: perpendiculaire au sol (plan XY)
     # -1 = pointe vers le sol (-z), +1 = pointe vers le haut (+z)
@@ -45,9 +45,9 @@ class Donnees:
 
    # Position des pots (x,y)
 
-    x_r = 0.052
-    y_r = -0.148
+    x_r = 0.050
+    y_r = -0.145
     x_b = 0.00
-    y_b = -0.155
-    x_j = -0.06
-    y_j = -0.155
+    y_b = -0.145
+    x_j = -0.057
+    y_j = -0.145

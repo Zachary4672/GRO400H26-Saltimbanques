@@ -29,6 +29,7 @@ directive = "Joint"
 
 # Initialisation de la caméra et des threads
 integration.init_integration()
+time.sleep(2)  # Attente pour stabiliser la caméra
 # Série
 
 
@@ -149,7 +150,7 @@ def executer_point(ser, pt, fA1, fA2, fA3):
     x, y, z, angle, type_mvt, pince, couleur = pt
     global directive
     writingJSON(x, y, z)
-
+    print("X:"+ str(x)+"Y: "+str(y)+" Z: "+str(z))
     bras_robot.Calculate(1, fA1, fA2, fA3, 1)
     if bras_robot.skip:
         print("Point hors de portée, passage au point suivant")
@@ -323,62 +324,74 @@ if ser is None:
     raise SystemExit("Port série indisponible.")
 
 fA1 = fA2 = fA3 = 0.0
-
-try:
-    #Call ici pour setup StartRobot à true
-    StartRobot = True #À changer pour la fonction
-    StopMoteur = False #À changer pour la fonction
-    #Ici probablement mettre une tâche dans un autre thread qui va recevoir l'appel du stop moteur et forcer l'arrêt des moteurs directements
-    
-
-    while True:
-
-        
-        # 1. Aller à la position scan
-        print("\n--- Position scan ---")
-        fA1, fA2, fA3, _ = aller_a(ser, X_SCAN, Y_SCAN, Z_SCAN, fA1, fA2, fA3)
-        time.sleep(2) # Attente pour stabiliser la caméra
-        # 2. Détecter les pilules avec la caméra
-        print("--- Détection caméra ---")
-
-        points = [] 
-        points = detecter_pilules(points)
-         
-        if not points:
-            print("Aucune pilule détectée, en attente de détection")
-            while not points:
-                points = []
-                detecter_pilules(points)
-
-
-
-        else:
-            len_points = len(points)
-            pil = 0
-            for pil in range(len_points):
-                pt = (points[pil]["x"], points[pil]["y"], Z_PICK, points[pil]["angle"], 0, 1, points[pil]["color"])
-                executer_point(ser, pt, fA1, fA2, fA3)
-                if bras_robot.skip:
-                    bras_robot.skip = False
-                    continue
-                z_drop = donnees.Donnees.z_drop
-                if points[pil]["color"] == "rouge":
-                    x_drop = donnees.Donnees.x_r
-                    y_drop = donnees.Donnees.y_r
-                elif points[pil]["color"] == "jaune":
-                    x_drop = donnees.Donnees.x_b
-                    y_drop = donnees.Donnees.y_b
-                else:
-                    x_drop = donnees.Donnees.x_j
-                    y_drop = donnees.Donnees.y_j
-                pt = (x_drop, y_drop, z_drop, 90, 0, 0, points[pil]["color"])
-                executer_point(ser, pt, fA1, fA2, fA3)
-                time.sleep(2)
-                #Ici if call fonction = true, then StartRobot = False
+while True:
+    try:
+        #Call ici pour setup StartRobot à true
+        StartRobot = True #À changer pour la fonction
+        StopMoteur = False #À changer pour la fonction
+        #Ici probablement mettre une tâche dans un autre thread qui va recevoir l'appel du stop moteur et forcer l'arrêt des moteurs directements
         
 
-except KeyboardInterrupt:
-    print("\nArrêt demandé.")
-finally:
-    ser.close()
-    integration.close_camera()
+        while StartRobot:
+
+            
+            # 1. Aller à la position scan
+            print("\n--- Position scan ---")
+            fA1, fA2, fA3, _ = aller_a(ser, X_SCAN, Y_SCAN, Z_SCAN, fA1, fA2, fA3)
+            time.sleep(2) # Attente pour stabiliser la caméra
+            # 2. Détecter les pilules avec la caméra
+            print("--- Détection caméra ---")
+
+            points = [] 
+            points = detecter_pilules(points)
+            
+            if len(points) == 0:
+                print("Aucune pilule détectée, en attente de détection")
+                while not points:
+                    points = []
+                    points = detecter_pilules(points)
+
+
+            else:
+                len_points = len(points)
+                pil = 0
+                for pil in range(len_points):
+                    pt = (points[pil]["x"], points[pil]["y"], Z_PICK, points[pil]["angle"], 0, 1, points[pil]["color"])
+                    executer_point(ser, pt, fA1, fA2, fA3)
+                    if bras_robot.skip:
+                        bras_robot.skip = False
+                        x_next = X_SCAN
+                        y_next = Y_SCAN
+                        z_next = Z_SCAN
+                    
+                    elif points[pil]["color"] == "rouge":
+                        x_next = donnees.Donnees.x_r
+                        y_next = donnees.Donnees.y_r
+                        z_next = donnees.Donnees.z_drop
+                    elif points[pil]["color"] == "jaune":
+                        x_next = donnees.Donnees.x_b
+                        y_next = donnees.Donnees.y_b
+                        z_next = donnees.Donnees.z_drop
+                    else:
+                        x_next = donnees.Donnees.x_j
+                        y_next = donnees.Donnees.y_j
+                        z_next = donnees.Donnees.z_drop
+                    pt = (x_next, y_next, z_next, 90, 0, 0, points[pil]["color"])
+                    executer_point(ser, pt, fA1, fA2, fA3)
+                    time.sleep(2)
+                    #Ici if call fonction = true, then StartRobot = False
+            StartRobot = False
+
+    except (serial.SerialException,OSError) as e:
+        print(f"Connection série perdue : {e}")
+        try:
+            ser.close()
+        except Exception:
+            pass
+        ser = None
+        while ser is None:
+            ser = connect_serial()
+            time.sleep(1)
+
+ser.close()
+integration.close_camera()

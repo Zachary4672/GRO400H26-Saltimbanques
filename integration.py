@@ -27,8 +27,8 @@ def scan_cam():
         cv2.waitKey(1)
 
     # if not cam.disp_queue.empty():
-    #     frame = cam.disp_queue.get()
-    #     cv2.imshow("YOLO", frame)
+    #      frame = cam.disp_queue.get()
+    #      cv2.imshow("YOLO", frame)
 
     if not cam.pos_queue.empty():
         pos_JB = cam.pos_queue.get()

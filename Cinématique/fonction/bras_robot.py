@@ -332,8 +332,8 @@ def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
 # carré caméra
         global p_ee_w
         # pour compenser le jeu des moteurs et du mvt linéaire
-        offset_descente_x = 0.009
-        offset_descente_y = 0.003
+        offset_descente_x = 0.04
+        offset_descente_y = 0.005
          # à ajuster pour que le point calculé soit au centre de la boîte (compense la hauteur de la caméra)
         # Dimmension image
         height_px = 480
@@ -341,14 +341,14 @@ def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
         # Champ de vision de la caméra calculé
         # Mettre à jour les angles selon la caméra
         # angle 1
-        fov_w = np.deg2rad(76.53)
+        fov_w = np.deg2rad(47.9)
         t1 = fov_w/2
 
         # angle 2
-        fov_h = np.deg2rad(56.27)
+        fov_h = np.deg2rad(34.67)
         t2 = fov_h/2
         # Hauteur de la caméra (distance verticale à la cible)
-        R = 0.187 #donnees.Donnees.z_cam + donnees.Donnees.h_boite + donnees.Donnees.z_scan #à programmer
+        R = 0.197 #donnees.Donnees.z_cam + donnees.Donnees.h_boite + donnees.Donnees.z_scan #à programmer
 
         #Vecteur en x et y pour se rendre à l'origine de la caméra
         half_w = R * math.tan(t1)
@@ -368,7 +368,7 @@ def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
         #           0, -1, 0,
         #           0, 0, 1]
         # corners_cam_w = p_ee_w + R_cam @ corners_local
-        posjb[0] = float(p_ee_w[0, 0]) -donnees.Donnees.x_cam + float(posjb[0]) + offset_descente_x
+        posjb[0] = float(p_ee_w[0, 0]) -donnees.Donnees.x_cam + float(posjb[0]) +offset_descente_x
         posjb[1] = float(p_ee_w[1, 0])+ float(posjb[1]) -offset_descente_y
         return posjb[0], posjb[1]
 

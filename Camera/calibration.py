@@ -41,10 +41,9 @@ cv2.destroyAllWindows()
 
 #calibration
 ret, K, dist, rvecs, tvecs = cv2.calibrateCamera(
-    objpoints, imgpoints, gray.shape[::-1], None, None
-)
+    objpoints, imgpoints, gray.shape[::-1], None, None)
 
 print("K =\n", K)
 print("dist =\n", dist)
-np.save("K2.npy", K)
-np.save("dist2.npy", dist)
+np.save("Camera/K2.npy", K)
+np.save("Camera/dist2.npy", dist)

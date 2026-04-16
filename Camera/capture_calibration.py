@@ -2,7 +2,7 @@ import cv2
 
 cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
 
-i = 0
+i = 55
 while True:
     ret, frame = cap.read()
     cv2.imshow("capture", frame)
