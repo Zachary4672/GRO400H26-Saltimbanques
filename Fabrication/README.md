@@ -59,6 +59,7 @@ Avant de procéder à l’assemblage, assurez-vous d’avoir toutes les pièces 
 ![image](images/image4.png)
 
 \*Les pinces sont imprimés en 3D en TPU.
+
 6. **Assemblage final**
 ![image](images/image6.png)  
 \* S’assurer que tous les servomoteurs sont positionnés à leur position initiale (0°).
