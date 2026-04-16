@@ -3,6 +3,7 @@
 ## **Liste des matériaux et composantes** 
 
 ---
+Pièces à 
 
 Mécanique :
 
@@ -24,14 +25,17 @@ Mécanique :
 Électrique :
 
 * Arduino OpenRB  
-![image](images/image9.png)
-* Raspberry Pi 5
-![image](images/image8.png)
+<img src="images/image9.png" width="250">
+
+* Raspberry Pi 5  
+<img src="images/image8.png" width="250">
+
 * Connecteurs Grove  
-![image](images/image3.png) 
+<img src="images/image3.png" width="250">
+
 * Caméra HBVCAM 3M2111 V22  
-![image](images/image7.jpg) 
-    
+<img src="images/image7.jpg" width="250">
+
   
 
 
