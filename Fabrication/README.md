@@ -40,7 +40,7 @@ Mécanique :
 Avant de procéder à l’assemblage, assurez-vous d’avoir toutes les pièces nécessaires, d'avoir imprimé toutes les parties et d'avoir découpé au laser la base en bois.
 
 1. **Assemblage de la base en bois**  
-![image](images/image2.jpg)  
+![image](images/image2.png)  
    
 
 2. **Assemblage de la base rotative**
@@ -49,16 +49,16 @@ Avant de procéder à l’assemblage, assurez-vous d’avoir toutes les pièces 
 
 3. **Assemblage des joints 1 et 2**
 
-![image](images/image5.jpg) 
+![image](images/image10.png) 
 
 4. **Assemblage du poignet**
 
-![image](images/image.png)
+![image](images/image5.jpg)
 
-5. **Assemblage de l’effecteur**![][image](images/image4.png)
+5. **Assemblage de l’effecteur**
+![][image](images/image4.png)
 
 \*Les pinces sont imprimés en 3D en TPU.
 6. **Assemblage final**
-
 ![image](images/image6.png)  
 \* S’assurer que tous les servomoteurs sont positionnés à leur position initiale (0°).
