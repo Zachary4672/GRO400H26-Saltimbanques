@@ -3,7 +3,8 @@
 ## **Liste des matériaux et composantes** 
 
 ---
-Pièces à 
+Pièces à imprimer :  
+Voir les modèles 3D ici : [Dossier CAD](CAD/)
 
 Mécanique :
 
