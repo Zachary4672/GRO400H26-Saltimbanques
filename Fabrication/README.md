@@ -1,4 +1,4 @@
-![image](images/image11.jpeg)
+<img src="images/image11.png" width="800">
 
 ## **Liste des matériaux et composantes** 
 
