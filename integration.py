@@ -21,6 +21,7 @@ def init_integration():
 #Main
 def scan_cam():
     # 1. déclencher détection
+    clear_buffers()
     for _ in range(5):  # nombre de frames
         cam.run_detection.set()
         time.sleep(0.05)
@@ -53,3 +54,10 @@ def close_camera():
     cam.cap.release()
     cv2.destroyAllWindows()
 
+def clear_buffers():
+    for queue in (cam.frame_queue, cam.disp_queue, cam.pos_queue):
+        while not queue.empty():
+            try:
+                queue.get_nowait()
+            except q.Empty:
+                break

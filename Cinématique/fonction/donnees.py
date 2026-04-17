@@ -11,7 +11,7 @@ class Donnees:
     Lcam_z = 0
 
     h_boite = 0.086
-    z_pick = -0.08
+    z_pick = -0.090
     z_drop = 0.02
    
 
@@ -42,6 +42,10 @@ class Donnees:
     x_scan = 0.2
     y_scan = 0
     z_scan = 0.1
+    # Position des intermédiaires
+    x_inter1 = 0.2
+    y_inter1 = 0.
+    z_inter1 = 0.02
 
    # Position des pots (x,y)
 

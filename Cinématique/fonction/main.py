@@ -1,6 +1,7 @@
 import cv2
 import serial
 import time
+import threading
 from pathlib import Path
 
 from torch import mv
@@ -11,15 +12,20 @@ import sys
 import json
 sys.path.append(str(Path(__file__).parents[2]))
 import integration
+import ComHMI
 
 PORT  = "/dev/ttyACM0"  # à adapter selon votre système
 BAUD  = 115200
-
+#Lock
+##serial_lock = threading.Lock()
 
 # Position scan
 X_SCAN = donnees.Donnees.x_scan
 Y_SCAN = donnees.Donnees.y_scan
 Z_SCAN = donnees.Donnees.z_scan
+X_INTER1 = donnees.Donnees.x_inter1
+Y_INTER1 = donnees.Donnees.y_inter1
+Z_INTER1 = donnees.Donnees.z_inter1
 Z_PICK = donnees.Donnees.z_pick
 LastMessage = None
 StartRobot = False  #Variable utilisé par le HMI
@@ -48,7 +54,7 @@ def connect_serial():
 
 def writingJSON(x_pos, y_pos, z_pos):
 
-    filename = Path("donnees.json")
+    filename = Path(__file__).resolve().parents[2] / "donnees.json"
     
     if filename.exists():
         filename.unlink()  # Supprimer le fichier existant
@@ -65,22 +71,30 @@ def writingJSON(x_pos, y_pos, z_pos):
 
 #Fonction: envoyer_angles(ser, a1, b1, a2, b2, a3, b3): Envoie des angles à l'arduino pour un prochain mouvement
 def envoyer_angles(ser, a1, b1, a2, b2, a3, b3, a4):
-    global turn, directive
-    if directive == "Joint":
-        message = "#"+ directive + f",{a1:.4f}~{a2:.4f} {a3:.4f}/{a4:.4f}*\n"
-    elif directive == "Lineaire" and turn == 0:
-        message = "#" + directive + f",{a1:.4f}~{b1:.4f} {a2:.4f}_{b2:.4f}&{a3:.4f}!{b3:.4f}*\n"
-    elif directive == "LineaireReverse":
-        message = "#" + "LineaireReverse" + f",{a1:.4f}~{b1:.4f} {a2:.4f}_{b2:.4f}&{a3:.4f}!{b3:.4f}*\n"
-    elif directive == "Pince1":
-        message = f"#Pince,1*\n"
-    elif directive == "Pince0":
-        message = f"#Pince,0*\n"
-    elif directive == "StopMoteur":
-        message = f"#Reset*\n"
-    elif directive == "StartMoteur":
-        message = f"#Good*\n"
-    ser.write(message.encode("utf-8"))
+    ##with serial_lock:
+        global turn, directive
+        if directive == "Joint":
+            message = "#"+ directive + f",{a1:.4f}~{a2:.4f} {a3:.4f}/{a4:.4f}*\n"
+        elif directive == "Lineaire" and turn == 0:
+            message = "#" + directive + f",{a1:.4f}~{b1:.4f} {a2:.4f}_{b2:.4f}&{a3:.4f}!{b3:.4f}*\n"
+        elif directive == "LineaireReverse":
+            message = "#" + "LineaireReverse" + f",{a1:.4f}~{b1:.4f} {a2:.4f}_{b2:.4f}&{a3:.4f}!{b3:.4f}*\n"
+        elif directive == "Pince1":
+            message = f"#Pince,1*\n"
+        elif directive == "Pince0":
+            message = f"#Pince,0*\n"
+        ##elif directive == "StopMoteur":
+            #message = f"#Reset*\n"
+        #elif directive == "StartMoteur":
+            #message = f"#Good*\n"
+        #ser.write(message.encode("utf-8"))
+        #while directive == "StopMoteur":
+            ##Moteur = ComHMI.is_MotorStart()
+            #if Moteur:
+                #directive = "StartMoteur"
+                #message = f"#Good*\n"
+                #ser.write(message.encode("utf-8"))
+                
 
 #Fonction: lire_responses permet de recevoir les informations du buffer "ser" et vérifier les réponses
 def lire_latest_ligne_complete(ser, last_line = None):
@@ -108,11 +122,19 @@ def aller_a(ser, x, y, z, fA1=0.0, fA2=0.0, fA3=0.0):
     global directive
 
     writingJSON(x, y, z)
-    
-    bras_robot.Calculate(2, fA1, fA2, fA3, turn)
+
+    bras_robot.Calculate(2, fA1, fA2, fA3, 0)
+
     
     j1, j2, j3, angle = bras_robot.angles
 
+    #ComHMI.PublishMessage("J1_angle", j1)
+    #ComHMI.PublishMessage("J2_angle", j2)
+    #ComHMI.PublishMessage("J3_angle", j3)
+    #ComHMI.PublishMessage("J1_speed", 0)
+    #ComHMI.PublishMessage("J2_speed", 0)
+    #ComHMI.PublishMessage("J3_speed", 0)
+    #with serial_lock:
     directive = "Joint"
     envoyer_angles(ser, j1,0, -j2,0, -j3,0, 90)
 
@@ -131,7 +153,7 @@ def aller_a(ser, x, y, z, fA1=0.0, fA2=0.0, fA3=0.0):
     return result[0], result[1], result[2], angle
 
 def detecter_pilules(pilules):
-    integration.display_cam()
+    # integration.display_cam()
     # Simuler la détection de pilules
     pilules = integration.scan_cam() 
     if pilules is None:
@@ -140,7 +162,7 @@ def detecter_pilules(pilules):
     _ = 0
     for _ in range(taille):  # nombre de frames   
         pilules[_]["x"], pilules[_]["y"] = bras_robot.CalculateCamera(X_SCAN,Y_SCAN,pilules[_]["x"], pilules[_]["y"])
-
+        
     return pilules
 
 
@@ -155,15 +177,15 @@ def executer_point(ser, pt, fA1, fA2, fA3):
     if bras_robot.skip:
         print("Point hors de portée, passage au point suivant")
         return
-    # if bras_robot.skip:
-    #     print("Point hors de portée, passage au point suivant")
-    #     bras_robot.skip = False
-    #     return
+
     j1, j2, j3, j4 = bras_robot.angles
     j4 = angle
-
+    #ComHMI.PublishMessage("J1_angle", j1)
+    #ComHMI.PublishMessage("J2_angle", j2)
+    #ComHMI.PublishMessage("J3_angle", j3)
     if type_mvt == 0:       
         # Mouvement Joint
+        #with serial_lock:
         directive = "Joint"
         envoyer_angles(ser, j1, 0, -j2, 0, -j3, 0, j4)
 
@@ -184,18 +206,30 @@ def executer_point(ser, pt, fA1, fA2, fA3):
 
     if pince == 1:
         #Fermer la pince
+        #with serial_lock:
         directive = "Pince1"
         envoyer_angles(ser, 0,0,0,0,0,0,0)
         time.sleep(0.8)
         Move_ReverseLineaire("DoneLine")
     else:
         #Ouvrir la pince
+        #with serial_lock:
         directive = "Pince0"
         envoyer_angles(ser, 0,0,0,0,0,0,0)
         time.sleep(0.8)
         Move_ReverseLineaire("DoneLine")
 
     return
+
+#def Verifier_MoteurStop():
+    #while True:
+
+        #Moteur = ComHMI.is_MotorStop()
+        #if Moteur:
+            #with serial_lock:
+               # global directive
+                #directive = "StopMoteur"
+                #envoyer_angles(ser, 0,0,0,0,0,0,0)
 
 
 
@@ -207,7 +241,8 @@ def Move_lineaire(LastMessage):
     Parts = [None]
     MemoryMessage = None
     if LastMessage == "DoneJoint":
-           
+        
+        #with serial_lock: 
         directive = "Lineaire"
 
 
@@ -234,7 +269,13 @@ def Move_lineaire(LastMessage):
         V2 = bras_robot.vitesse[1]
         V3 = bras_robot.vitesse[2]
 
-
+        #ComHMI.PublishMessage("J1_angle", PickJ1)
+        #ComHMI.PublishMessage("J2_angle", PickJ2)
+        #ComHMI.PublishMessage("J3_angle", PickJ3)
+        #ComHMI.PublishMessage("J1_speed", V1)
+        #ComHMI.PublishMessage("J2_speed", V2)
+        #ComHMI.PublishMessage("J3_speed", V3)
+        #with serial_lock:
         envoyer_angles(ser, PickJ1, V1, -PickJ2, V2, -PickJ3, V3, 0)
 
 
@@ -258,7 +299,11 @@ def Move_lineaire(LastMessage):
             V2 = bras_robot.vitesse[1]
             V3 = bras_robot.vitesse[2]
 
+            #ComHMI.PublishMessage("J1_speed", V1)
+            #ComHMI.PublishMessage("J2_speed", V2)
+            #ComHMI.PublishMessage("J3_speed", V3)
 
+            #with serial_lock:
             envoyer_angles(ser, PickJ1, V1, -PickJ2, V2, -PickJ3, V3, 0)
 
 
@@ -272,6 +317,7 @@ def Move_ReverseLineaire(LastMessage):
     MemoryMessage = None
     if LastMessage == "DoneLine":
            
+        #with serial_lock:
         directive = "LineaireReverse"
  
         bras_robot.Calculate(2, 0.0, 0.0, 0.0, 0)
@@ -292,6 +338,14 @@ def Move_ReverseLineaire(LastMessage):
         V2 = bras_robot.vitesse[1]
         V3 = bras_robot.vitesse[2]
  
+        #ComHMI.PublishMessage("J1_angle", ReachJ1)
+        #ComHMI.PublishMessage("J2_angle", ReachJ2)
+        #ComHMI.PublishMessage("J3_angle", ReachJ3)
+        #ComHMI.PublishMessage("J1_speed", V1)
+        #ComHMI.PublishMessage("J2_speed", V2)
+        #ComHMI.PublishMessage("J3_speed", V3)
+
+        #with serial_lock:
         envoyer_angles(ser, ReachJ1, V1, -ReachJ2, V2, -ReachJ3, V3, 0)
  
 
@@ -310,33 +364,43 @@ def Move_ReverseLineaire(LastMessage):
                 V1 = bras_robot.vitesse[0]
                 V2 = bras_robot.vitesse[1]
                 V3 = bras_robot.vitesse[2]
- 
+
+                #ComHMI.PublishMessage("J1_speed", V1)
+                #ComHMI.PublishMessage("J2_speed", V2)
+                #ComHMI.PublishMessage("J3_speed", V3)
+                #with serial_lock:
                 envoyer_angles(ser, ReachJ1, V1, -ReachJ2, V2, -ReachJ3, V3, 0)
  
             MemoryMessage = None
 
 # MAIN
 
-
+#t_moteur = threading.Thread(target=Verifier_MoteurStop, daemon=True)
+#t_moteur.start()
 
 ser = connect_serial()
 if ser is None:
-    raise SystemExit("Port série indisponible.")
+    PORT = "/dev/ttyACM1"
+    # Tentative de connexion sur un autre port
+    ser = connect_serial()
+    if ser is None:
+        raise SystemExit("Port série indisponible.")
 
-fA1 = fA2 = fA3 = 0.0
 while True:
+    fA1 = fA2 = fA3 = 0.0
     try:
         #Call ici pour setup StartRobot à true
-        StartRobot = True #À changer pour la fonction
-        StopMoteur = False #À changer pour la fonction
-        #Ici probablement mettre une tâche dans un autre thread qui va recevoir l'appel du stop moteur et forcer l'arrêt des moteurs directements
-        
-
+        #StartRobot = ComHMI.is_started()
+        StartRobot = True
+        if StartRobot == -1:
+            raise Exception("Connection perdue avec le HMI, arrêt du robot")
+        #ComHMI.PublishMessage("Robot_state", "WAITING")
         while StartRobot:
 
             
             # 1. Aller à la position scan
             print("\n--- Position scan ---")
+            #ComHMI.PublishMessage("Robot_state", "SCANNING")
             fA1, fA2, fA3, _ = aller_a(ser, X_SCAN, Y_SCAN, Z_SCAN, fA1, fA2, fA3)
             time.sleep(2) # Attente pour stabiliser la caméra
             # 2. Détecter les pilules avec la caméra
@@ -352,7 +416,8 @@ while True:
                     points = detecter_pilules(points)
 
 
-            else:
+            if len(points) != 0:
+                #ComHMI.PublishMessage("Robot_state", "PICK")
                 len_points = len(points)
                 pil = 0
                 for pil in range(len_points):
@@ -377,11 +442,16 @@ while True:
                         y_next = donnees.Donnees.y_j
                         z_next = donnees.Donnees.z_drop
                     pt = (x_next, y_next, z_next, 90, 0, 0, points[pil]["color"])
+                    #ComHMI.PublishMessage("Robot_state", "DROP")
                     executer_point(ser, pt, fA1, fA2, fA3)
+                    if pil < len_points-1:
+                        aller_a(ser, X_INTER1, Y_INTER1, Z_INTER1, fA1, fA2, fA3)
                     time.sleep(2)
                     #Ici if call fonction = true, then StartRobot = False
-            StartRobot = False
+            #if ComHMI.is_stopped():
+                #StartRobot = False
 
+            
     except (serial.SerialException,OSError) as e:
         print(f"Connection série perdue : {e}")
         try:
@@ -392,6 +462,11 @@ while True:
         while ser is None:
             ser = connect_serial()
             time.sleep(1)
+    except Exception as e:
+        while StartRobot == -1:
+            print(f"Connection perdue avec le HMI : {e}")
+            #StartRobot = ComHMI.is_started()
+            time.sleep(3)
 
 ser.close()
 integration.close_camera()

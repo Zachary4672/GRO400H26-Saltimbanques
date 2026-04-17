@@ -33,8 +33,8 @@ def init_camera():
     model = YOLO("Camera/jelly_bean1.pt")
     cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
 
-    K = np.load("Camera/K1.npy")
-    dist = np.load("Camera/dist1.npy")
+    K = np.load("Camera/K.npy")
+    dist = np.load("Camera/dist.npy")
 
 def capture_frame(cap, frame_queue):
     ret, frame = cap.read()

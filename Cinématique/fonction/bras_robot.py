@@ -129,7 +129,7 @@ def Calculate(iState, fA1, fA2, fA3, turn):
     x_cible, y_cible, z_cible = load_xyz()
     if iState == 1 or iState == 2 or iState == 0:
         if iState == 1 or turn == 1:
-            q = 0.1
+            q = 0.05
         else:
             q = 0
     if iState == 1 or iState == 2:
@@ -157,7 +157,6 @@ def Calculate(iState, fA1, fA2, fA3, turn):
     # vecteur base -> poignet
         d = p_e2_cible - arrP_w0
         dx, dy, dz = d[0,0], d[1,0], d[2,0]
-   
     # 1) yaw
         j1 = math.atan2(dy, dx)
    
@@ -168,12 +167,11 @@ def Calculate(iState, fA1, fA2, fA3, turn):
         D = math.sqrt(r*r + z_plan*z_plan)
    
     # atteignabilité
-        if D > (L1 + L2) + 1e-9 or D < abs(L1 - L2) - 1e-9:
-            global skip
-            skip = True
-            return
+        # if D > (L1 + L2) + 1e-9 or D < abs(L1 - L2) - 1e-9:
+        #     global skip
+        #     skip = True
+        #     return
             # raise ValueError("Cible hors de l'espace atteignable")
-        
    
     # 2) coude (loi des cosinus)
         c3 = (D*D - L1*L1 - L2*L2) / (2*L1*L2)
@@ -183,6 +181,12 @@ def Calculate(iState, fA1, fA2, fA3, turn):
             j3 = -math.acos(c3)
         else:
             j3 =  math.acos(c3)
+
+
+        if abs(math.sin(j3)) < 0.01:
+            global skip
+            skip = True
+            return
        
     # 3) épaule (ATTENTION AU SIGNE — correction clé)
         phi  = math.atan2(-z_plan, r)
@@ -332,7 +336,7 @@ def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
 # carré caméra
         global p_ee_w
         # pour compenser le jeu des moteurs et du mvt linéaire
-        offset_descente_x = 0.04
+        offset_descente_x = 0.02
         offset_descente_y = 0.005
          # à ajuster pour que le point calculé soit au centre de la boîte (compense la hauteur de la caméra)
         # Dimmension image
@@ -341,14 +345,14 @@ def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
         # Champ de vision de la caméra calculé
         # Mettre à jour les angles selon la caméra
         # angle 1
-        fov_w = np.deg2rad(47.9)
+        fov_w = np.deg2rad(60.43)
         t1 = fov_w/2
 
         # angle 2
-        fov_h = np.deg2rad(34.67)
+        fov_h = np.deg2rad(44.78)
         t2 = fov_h/2
         # Hauteur de la caméra (distance verticale à la cible)
-        R = 0.197 #donnees.Donnees.z_cam + donnees.Donnees.h_boite + donnees.Donnees.z_scan #à programmer
+        R = 0.176 #donnees.Donnees.z_cam + donnees.Donnees.h_boite + donnees.Donnees.z_scan #à programmer
 
         #Vecteur en x et y pour se rendre à l'origine de la caméra
         half_w = R * math.tan(t1)
@@ -363,22 +367,10 @@ def CalculateCamera(pos_x, pos_y, jb_x, jb_y):
             [-half_w,  half_h, 0]
         ]).T
 
-        # Calculate(2,0,0,0,0) # Calcul des positions actuelles du robot pour mettre à jour les globals
-        # R_cam = [1, 0, 0,
-        #           0, -1, 0,
-        #           0, 0, 1]
-        # corners_cam_w = p_ee_w + R_cam @ corners_local
+
         posjb[0] = float(p_ee_w[0, 0]) -donnees.Donnees.x_cam + float(posjb[0]) +offset_descente_x
         posjb[1] = float(p_ee_w[1, 0])+ float(posjb[1]) -offset_descente_y
         return posjb[0], posjb[1]
 
  
  
-        # globals pour affichage
- 
-        # p_w0 = arrP_w0
-        # p_ee_w = p_ee
-        # p_e1_w = p_e1
-        # p_e2_w = p_e2
-        # x_tool_w = x_tool
-        # angles = (j1,j2,j3,j4)
