@@ -12,7 +12,8 @@ from Camera import main_video as mv
 mv.init_camera()
 th.Thread(target=mv.capture_frame, args=(mv.cap,mv.frame_queue), daemon=True).start()
 th.Thread(target=mv.image_process, args=(mv.frame_queue,), daemon=True).start()
-
+i = 0
+key = cv2.waitKey(1)
 #Main
 while True:
 
@@ -31,6 +32,11 @@ while True:
         cv2.imshow("No detection", frame)
     if cv2.waitKey(1) == 27:
         break
+
+    if key == ord(' '):  # sauvegarder
+        cv2.imwrite(f"calib_{i}.jpg", frame)
+        print(f"Image {i} sauvée")
+        i += 1
     key = cv2.waitKey(1) & 0xFF
 
 

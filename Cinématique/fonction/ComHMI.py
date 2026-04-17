@@ -33,6 +33,7 @@ def on_connect(client, userdata, flags, rc):
         client.subscribe(TOPIC_MOTORSTART)
         client.subscribe(TOPIC_MOTORSTOP)
         iError_Code = rc
+        
     else:
         iError_Code = rc
 

@@ -18,13 +18,13 @@ run_detection = th.Event()
 
 #valeur hue couleurs
 rouge_low = 8
-rouge_high = 170
+rouge_high = 175
 orange = 15
 jaune = 35
 vert = 85
-mauve = 120
+mauve = 129
 noir = 125
-rose = 180
+rose = 173
 
 
 def init_camera():
@@ -93,6 +93,7 @@ def image_process(frame_queue):
             #Masque pour couleur
             mask = tresh > 0
             pixels = hsv[mask]
+            mean_s = np.mean(pixels[:,1])
 
             if len(pixels) == 0 :
                 color = "unknown"
@@ -112,10 +113,11 @@ def image_process(frame_queue):
                 color = "mauve"
             elif mean_h < noir:
                 color = "noir"
-            elif mean_h < rouge_high:
-                color = "rouge"
-            elif mean_h < rose:
+            elif mean_h < rose and mean_s < 188:
                 color = "rose"
+            elif mean_h < rouge_high and mean_s >= 188:
+                color = "rouge"
+            
             else:
                 color = "unknown"
 
@@ -199,7 +201,7 @@ def image_process(frame_queue):
             # ligne angle 0°
             cv2.line(frame, (cx, cy), (cx + 50, cy), (255, 0, 0), 2)
 
-            cv2.putText(frame, f"{cx:.0f},{cy:.0f}, angle : {angle:.1f}, couleur : {color}, mean_h :{mean_h:.0f}, mean_s :{mean_s:.0f}", (int(cx + dx), int(cy + dy)),
+            cv2.putText(frame, f"x:{cx:.0f},y:{cy:.0f}, angle : {angle:.1f}, couleur : {color}", (int(cx + dx), int(cy + dy)), # mean_h :{mean_h:.0f}, mean_s :{mean_s:.0f}
             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
             cv2.drawContours(frame, [box_pts], 0, (0, 0, 255), 2)
 
