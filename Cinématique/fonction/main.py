@@ -11,7 +11,7 @@ import affichage
 import sys
 import json
 sys.path.append(str(Path(__file__).parents[2]))
-import integration
+from Camera import integration
 import ComHMI
 
 PORT  = "/dev/ttyACM0"  # à adapter selon votre système

@@ -224,9 +224,9 @@ def image_process(frame_queue):
             cv2.line(frame, (cx, cy), (cx + 50, cy), (255, 0, 0), 2)
             #--Texte--
             cv2.putText(frame, 
-                f"x:{cx:.0f},y:{cy:.0f}, angle : {angle:.1f}, couleur : {color}", 
+                f"x:{cx:.0f},y:{cy:.0f}, angle : {angle:.1f}, couleur : {color},
+                mean_h :{mean_h:.0f}, mean_s :{mean_s:.0f}",
                 (int(cx + dx), int(cy + dy)), 
-                # autre info : mean_h :{mean_h:.0f}, mean_s :{mean_s:.0f}
                 cv2.FONT_HERSHEY_SIMPLEX, 
                 0.5, 
                 (0, 0, 255), 
