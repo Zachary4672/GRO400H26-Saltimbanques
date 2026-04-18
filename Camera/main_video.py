@@ -6,9 +6,7 @@ import threading as th
 import queue as q
 import time
 
-# import warnings
-# warnings.filterwarnings("ignore")
-
+#Création des files d'attente ("queue") pour les données à utilisé entre les fils ("thread")
 frame_queue = q.Queue(maxsize=1)
 disp_queue = q.Queue(maxsize=1)
 pos_queue = q.Queue(maxsize=1)
@@ -16,7 +14,8 @@ pos_queue = q.Queue(maxsize=1)
 # notification pour détecter JB
 run_detection = th.Event()
 
-#valeur hue couleurs
+#valeurs hue couleurs
+#À calibré manuellement selon l'éclairage
 rouge_low = 8
 rouge_high = 175
 orange = 15

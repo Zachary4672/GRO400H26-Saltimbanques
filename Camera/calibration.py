@@ -2,9 +2,10 @@ import cv2
 import numpy as np
 import glob
 
+
+# Dimmension du plateau quadrillé
 lar =7
 haut= 7
-# damier
 chessboard_size = (lar,haut)
 
 #critère de raffinement
@@ -17,7 +18,8 @@ objp[:, :2] = np.mgrid[0:chessboard_size[0], 0:chessboard_size[1]].T.reshape(-1,
 objpoints = []
 imgpoints = []
 
-images = glob.glob("calib_*.jpg")
+#Chargement de images de calibration
+images = glob.glob("calib_*.jpg") #changer au besoin selon le nom des images
 
 for fname in images:
     img = cv2.imread(fname)
@@ -25,21 +27,16 @@ for fname in images:
 
     ret, corners = cv2.findChessboardCorners(gray, chessboard_size, cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE)
     print(fname, "->", ret)
-    # cv2.imwrite(f"annoted1.jpg", corners)
-    # print(f"ChessBoard annoted")
+
 
     if ret:
         objpoints.append(objp)
         #raffiner les coins
         corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
         imgpoints.append(corners2)
-        # cv2.imwrite(f"annoted2.jpg", corners2)
-        # print(f"ChessBoard annoted")
 
         #affichage
         cv2.drawChessboardCorners(img, chessboard_size, corners2, ret)
-        cv2.imwrite(f"annoted1.jpg", img)
-        print(f"ChessBoard annoted")
         cv2.imshow("corners", img)
         cv2.waitKey(100)
 
@@ -52,5 +49,6 @@ ret, K, dist, rvecs, tvecs = cv2.calibrateCamera(
 print("K =\n", K)
 print("dist =\n", dist)
 
-np.save("Camera/K2.npy", K)
-np.save("Camera/dist2.npy", dist)
+#Faire attention à d'anciens fichier du même nom qui seront perdu 
+np.save("Camera/K.npy", K)
+np.save("Camera/dist.npy", dist)
