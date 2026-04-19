@@ -1,2 +1,0 @@
-# Saltimbanques
-bras robotique
