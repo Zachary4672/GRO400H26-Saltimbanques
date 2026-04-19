@@ -20,8 +20,6 @@ skip = False
 # -----------------------------
 # Rotations
 # -----------------------------
-
-
 def fk_from_j123(arrP_w0, L1, L2, L3, sens, j1, j2, j3):
  
     global p_ee_w, p_e1_w, p_e2_w, x_tool_w
@@ -49,7 +47,7 @@ def fk_from_j123(arrP_w0, L1, L2, L3, sens, j1, j2, j3):
  
     return p_ee_w1, p_e1_w1, p_e2_w1, x_tool_w1, j4
  
- 
+#Calcul de la jacobienne
 def jacobian_pos_numeric(arrP_w0, L1, L2, L3, sens, j1, j2, j3, eps=1e-6):
  
     p0, *_ = fk_from_j123(arrP_w0, L1, L2, L3, sens, j1, j2, j3)
@@ -65,7 +63,8 @@ def jacobian_pos_numeric(arrP_w0, L1, L2, L3, sens, j1, j2, j3, eps=1e-6):
         J[:, i] = ((p1 - p0) / eps).reshape(3)
  
     return J
- 
+
+#Matrice de rotation
 def Rz(theta):
     return np.array([
         [math.cos(theta), -math.sin(theta), 0],
@@ -73,6 +72,7 @@ def Rz(theta):
         [0, 0, 1]
     ])
  
+#Matrice de rotation
 def Ry(theta):
     return np.array([
         [ math.cos(theta), 0,  math.sin(theta)],
@@ -80,7 +80,7 @@ def Ry(theta):
         [-math.sin(theta), 0,  math.cos(theta)]
     ])
  
- 
+#Lecture du JSON
 def load_xyz(filename = "donnees.json"):
     with open(filename, "r", encoding= "utf-8") as f:
         data = json.load(f)
@@ -129,10 +129,10 @@ def Calculate(iState, fA1, fA2, fA3, turn):
     x_cible, y_cible, z_cible = load_xyz()
     if iState == 1 or iState == 2 or iState == 0:
         if iState == 1 or turn == 1:
-            q = 0.05
+            q = 0.05 #Calcul avec une approche de 5 cm
         else:
-            q = 0
-    if iState == 1 or iState == 2:
+            q = 0 #Calcul sans l'approche de 5 cm
+    if iState == 1 or iState == 2: #Calcul en déplacement en joint
     # -----------------------------
     # Base et cible
     # -----------------------------
@@ -166,12 +166,8 @@ def Calculate(iState, fA1, fA2, fA3, turn):
    
         D = math.sqrt(r*r + z_plan*z_plan)
    
-    # atteignabilité
-        # if D > (L1 + L2) + 1e-9 or D < abs(L1 - L2) - 1e-9:
-        #     global skip
-        #     skip = True
-        #     return
-            # raise ValueError("Cible hors de l'espace atteignable")
+
+
    
     # 2) coude (loi des cosinus)
         c3 = (D*D - L1*L1 - L2*L2) / (2*L1*L2)
@@ -182,7 +178,7 @@ def Calculate(iState, fA1, fA2, fA3, turn):
         else:
             j3 =  math.acos(c3)
 
-
+    # atteignabilité
         if abs(math.sin(j3)) < 0.01:
             global skip
             skip = True
@@ -237,12 +233,12 @@ def Calculate(iState, fA1, fA2, fA3, turn):
  
         angles = arrAngles
    
-    else:
+    else: 
  
         # ---------------------------------------------------------
         # Linéaire (servoing cartésien) : à partir des angles actuels
         # Inputs: fA1,fA2,fA3 = j1,j2,j3 actuels (RAD)
-        # Cible cartésienne: donnees.Donnees.(x_cible,y_cible,z_cible)
+        # Cible cartésienne: information du JSON
         # Sortie: global vitesse = (qdot1,qdot2,qdot3,qdot4) en RAD/S
         # ---------------------------------------------------------
  
@@ -266,7 +262,7 @@ def Calculate(iState, fA1, fA2, fA3, turn):
         # FK actuelle (EEF + points pour affichage)
         arrP_ee_w, arrP_e1_w, arrP_e2_w, arrX_tool_w, j4 = fk_from_j123(arrP_w0, L1, L2, L3, sens, j1, j2, j3)
  
-        # Mise à jour globals pour affichage (comme ton mode joint)
+        # Mise à jour globals pour affichage
  
         p_ee_w = arrP_ee_w
  
@@ -285,15 +281,14 @@ def Calculate(iState, fA1, fA2, fA3, turn):
         dist = float(np.linalg.norm(e))
  
         # -----------------------------
-        # Paramètres (à ajuster)
+        # Paramètres
         # -----------------------------
-        # IMPORTANT: si tes donnees sont en mm, mets v_cart en mm/s et tol en mm.
-        v_cart = 50.0*1e-3     # vitesse cartésienne max (ex: 50 mm/s)  <-- adapte à tes unités
+        v_cart = 50.0*1e-3     # vitesse cartésienne max (ex: 50 mm/s)
         Kp     = 2.0      # gain de correction (plus haut = plus agressif)
-        tol    = 1.0*1e-3      # tolérance position (ex: 1 mm)
+        tol    = 1.0*1e-3      # tolérance position
  
         # Limites vitesses joints (rad/s)
-        qdot_max = np.array([2.0, 2.0, 2.0])  # à adapter selon ton robot
+        qdot_max = np.array([2.0, 2.0, 2.0])
  
         # DLS (anti-singularités)
         lam = 0.05  # amortissement fixe (plus grand = plus stable près singularités, mais moins précis)
